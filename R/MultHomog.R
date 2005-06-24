@@ -1,0 +1,36 @@
+MultHomog <- function(...){
+    labelList <- as.character((match.call(expand.dots = FALSE))[[2]])
+    gnmData <- getModelFrame()
+
+    designList <- lapply(gnmData[, labelList], class.ind)
+
+    ## get labels for all levels
+    allLevels <- lapply(designList, colnames)
+    labels <- unique(unlist(allLevels))
+    nLevels <- length(labels)
+
+    ## expand design matrices if necessary
+    if (!all(mapply(identical, allLevels, list(labels)))) {
+        labels <- sort(labels)
+        M <- matrix(0, nrow = nrow(gnmData), ncol = nLevels,
+                    dimnames = list(NULL, labels))
+        designList <- lapply(designList, function(design, M) {
+            M[,colnames(design)] <- design
+            M}, M)
+    }
+    
+    predictor <- function(coef) {
+        do.call("pprod", lapply(designList, "%*%", coef))
+    }
+
+    localDesignFunction <- function(coef, ...) {
+        productList <- designList
+        for (i in seq(designList))
+            productList[[i]] <- designList[[i]] * 
+                drop(do.call("pprod", lapply(designList[-i], "%*%", coef)))
+        do.call("psum", productList)
+    }
+
+    list(labels = labels, predictor = predictor,
+         localDesignFunction = localDesignFunction)
+}
