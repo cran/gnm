@@ -17,16 +17,14 @@ gnm <- function(formula, eliminate = NULL, constrain = NULL, family = gaussian,
                            formula = falseFormula,
                            as.list(modelData)[argPos],
                            drop.unused.levels = TRUE))
-    if (!is.null(attr(modelTerms, "extraData")))
-        modelData <- eval(modelData, attr(modelTerms, "extraData"),
-                          parent.frame())
-    else
-        modelData <- eval(modelData, parent.frame())   
+    modelData <- eval(modelData, parent.frame())   
     attr(modelTerms, "variables") <- attr(attr(modelData, "terms"),
                                           "variables")
 
     if (!is.null(eliminate)) {
-        if (!suppressWarnings(is.factor(with(modelData, eval(eliminate[[2]])))))
+        toElim <- attr(terms(eliminate), "factors")
+        if (ncol(toElim) != 1 |
+            any(attr(modelData, "dataClasses")[rownames(toElim)] != "factor"))
             stop("'eliminate' formula must contain one term only,",
                  " which must be a factor")
     }
@@ -83,7 +81,7 @@ gnm <- function(formula, eliminate = NULL, constrain = NULL, family = gaussian,
         dev <- sum(family$dev.resids(y, mu, weights))
         modelAIC <- suppressWarnings(family$aic(y, rep.int(1, nObs), mu,
                                                 weights, dev))
-        fit <- list(coefficients = numeric(0), eliminate = numeric(0),
+        fit <- list(coefficients = numeric(0), eliminate = 0,
                     predictors = offset, fitted.values = mu, deviance = dev,
                     aic = modelAIC, iter = 0, conv = NULL,
                     weights = weights*dmu^2/family$variance(mu),
@@ -93,8 +91,9 @@ gnm <- function(formula, eliminate = NULL, constrain = NULL, family = gaussian,
         if (termPredictors) fit$termPredictors <- NULL
     }
     else {
-        modelTools <- gnmTools(modelTerms, modelData, x, family, weights,
-                               offset, eliminate, termPredictors)
+        gnmEnvironment <- parent.frame()
+        modelTools <- gnmTools(gnmEnvironment, modelTerms, modelData, x,
+                               eliminate, termPredictors)
         nParam <- length(modelTools$classID)
         nElim <- length(modelTools$eliminate)
 
@@ -143,6 +142,10 @@ gnm <- function(formula, eliminate = NULL, constrain = NULL, family = gaussian,
                        offset, nObs = nObs, start = start,
                        control = gnmControl(...), verbose, x, vcov,
                        termPredictors)
+    }
+    if (is.null(fit)) {
+        warning("Algorithm failed - no model could be estimated", call. = FALSE)
+        return()
     }
     fit <- c(list(call = call, formula = formula, constrain = constrain,
                   family = family, prior.weights = weights,

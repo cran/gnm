@@ -19,7 +19,8 @@ gnmTerms <- function(formula, eliminate)
     nonlinear <- is.element(seq(labelList),
                             grep("(Mult|Nonlin)[[:space:]]*\\(", labelList))
     labelList <- c(list(structure(c(intercept, labelList[!nonlinear]),
-                                  class = "Linear"))[any(!nonlinear|intercept)],
+                                  class = "Linear"))[any(
+                                  c(intercept, !nonlinear))],
                    lapply(labelList[nonlinear],
                           function(term) eval(parse(text = term))))
     labelList <- prefixList <- unlistOneLevel(labelList)
@@ -31,14 +32,11 @@ gnmTerms <- function(formula, eliminate)
             switch(classIndex[[i]],
                    "Mult" = paste("Mult", multNo[i], ".Factor",
                    seq(labelList[[i]]), ".", sep = ""),
-                   "Nonlin" = deparse(attr(labelList[[i]], "call")),
+                   "Nonlin" = deparse(attr(labelList[[i]], "call"))[1],
                    "")
 
     labelList <- unlistOneLevel(labelList)
     offsetList <- lapply(labelList, attr, "offset")
-
-    extraData <- lapply(labelList, attr, "extraData")
-    extraData <- do.call("cbind", extraData[!sapply(extraData, is.null)])
 
     if (attr(fullTerms, "response") < 1) response <- ""
     else response <- evalq(attr(fullTerms, "variables")[[2]])
@@ -48,13 +46,11 @@ gnmTerms <- function(formula, eliminate)
                                                            "offset")], deparse)
     
     structure(reformulate(c(unlist(labelList), unlist(offsetList),
-                            predictorOffset, unlist(colnames(extraData))),
-                          response),
+                            predictorOffset), response),
               terms = fullTerms,
               termLabels = termLabels,
               offset = offsetList,
               parsedLabels = labelList,
               prefixLabels = unlist(prefixList),
-              response = attr(fullTerms, "response"),
-              extraData = extraData)
+              response = attr(fullTerms, "response"))
 }

@@ -1,6 +1,5 @@
 "gnmTools" <-
-    function(gnmTerms, gnmData, x, family, weights, offset, eliminate,
-             termPredictors)
+    function(gnmEnvironment, gnmTerms, gnmData, x, eliminate, termPredictors)
 {
     labelList <- attr(gnmTerms, "parsedLabels")
     prefixList <- attr(gnmTerms, "prefixLabels")
@@ -14,7 +13,8 @@
     termTools <- factorAssign <- labelList
     for (i in seq(labelList)) {
         if (inherits(labelList[[i]], "Nonlin")) {
-            termTools[[i]] <- eval(attr(labelList[[i]], "call"))
+            termTools[[i]] <- eval(attr(labelList[[i]], "call"),
+                                   envir = gnmData, enclos = gnmEnvironment)
             factorAssign[[i]] <-
                 structure(rep(i, length(termTools[[i]]$labels)),
                           names = paste(prefixList[[i]], ".",
@@ -53,17 +53,12 @@
         }
     }
 
-    start <- function (scale = 0.1) {
+    start <- function(scale = 0.1) {
         theta <- structure(runif(length(factorAssign), -1, 1) * scale,
                            names = names(factorAssign))
         theta <- ifelse(theta < 0, theta - scale, theta + scale)
-        for (i in seq(termTools)[plugInStart]) {
-            ind <- factorAssign == i
-            if (is.function(termTools[[i]]$start))
-                theta[ind] <- termTools[[i]]$start(sum(ind))
-            else
-                theta[ind] <- termTools[[i]]$start
-        }
+        for (i in seq(termTools)[plugInStart])
+            theta[factorAssign == i] <- termTools[[i]]$start
         theta
     }
 
