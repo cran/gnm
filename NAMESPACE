@@ -1,7 +1,7 @@
-export(checkEstimable, Diag, Dref, Exp, getContrasts,
-       getModelFrame, gnm, gnmControl, MPinv, Mult, MultHomog,
-       Nonlin, se, Symm, summary.gnm, termPredictors, Topo,
-       wedderburn)
+useDynLib(gnm)
+export(checkEstimable, Diag, Dref, Exp, expandCategorical, getContrasts,
+       getModelFrame, gnm, MPinv, Mult, MultHomog, Nonlin, residSVD, se, Symm,
+       summary.gnm, termPredictors, Topo, wedderburn)
 
 import(MASS, stats)
 importFrom(graphics, plot)
@@ -21,9 +21,10 @@ S3method(drop1, gnm)
 S3method(dropterm, gnm)
 S3method(dummy.coef, gnm)
 S3method(effects, gnm)
+S3method(formula, gnm)
 S3method(hatvalues, gnm)
-S3method(kappa, gnm)
 S3method(influence, gnm)
+S3method(kappa, gnm)
 S3method(labels, gnm)
 S3method(logtrans, gnm)
 S3method(model.matrix, gnm)
@@ -31,7 +32,9 @@ S3method(model.frame, gnm)
 S3method(plot, gnm)
 S3method(predict, gnm)
 S3method(print, gnm)
+S3method(print, coef.gnm)
 S3method(print, summary.gnm)
+S3method(print, vcov.gnm)
 S3method(proj, gnm)
 S3method(residuals, gnm)
 S3method(rstandard, gnm)

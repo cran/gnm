@@ -9,19 +9,19 @@
 }
 \usage{
 gnm(formula, eliminate = NULL, constrain = NULL, family = gaussian,
-    data = NULL, subset, weights, na.action, method = "gnmFit", offset,
-    start = NULL, control = gnmControl(...), verbose = TRUE,
-    model = TRUE, x = FALSE, vcov = FALSE, termPredictors = FALSE, ...)
+    data = NULL, subset, weights, na.action,  method = "gnmFit", offset,
+    start = NULL, tolerance = 1e-4, iterStart = 2, iterMax = 500,
+    trace = FALSE, verbose = TRUE, model = TRUE, x = FALSE,
+    termPredictors = FALSE, ...)  
 }
 \arguments{
   \item{formula}{ a symbolic description of the nonlinear predictor. }
-  \item{eliminate}{ an optional formula of the form \code{~ model},
-    i.e., a formula with no response variable specified, to be included in the
-    predictor but excluded from the output of \code{print()},
-    \code{summary()}, \code{coef()}, etc.  See details. }
-  \item{constrain}{ coefficients to set to zero, specified by a numeric
-    vector of indices, a logical vector, or "pick" to select from a Tk
-    dialog. }
+  \item{eliminate}{ an optional factor to be included in the predictor
+    but excluded from \code{print()} displays of the model object or its
+    components obtained using accessor functions. See details. }
+  \item{constrain}{ (non-\code{eliminate}d) coefficients to set to zero,
+    specified by a numeric vector of indices, a logical vector, a
+    character vector of names, or "pick" to select from a Tk dialog. }
   \item{family}{ a specification of the error distribution and link function
     to be used in the model. This can be a character string naming
     a family function; a family function, or the result of a call
@@ -41,10 +41,12 @@ gnm(formula, eliminate = NULL, constrain = NULL, family = gaussian,
     \code{na.action} attribute of \code{data}; second, any
     \code{na.action} setting of \code{options}, and third,
     \code{na.fail}.}
-  \item{method}{ the method to be used: either \code{"gnmFit"} to fit the
-    model, \code{"coef"} to return a character vector of names for the
-    coefficients in the model, or \code{"model.frame"} to return the
-    model frame. }
+  \item{method}{ the method to be used: either \code{"gnmFit"} to fit
+    the model using the default maximum likelihood algorithm,
+    \code{"coefNames"} to return a character vector of names for the
+    coefficients in the model, \code{"model.matrix"} to return the model
+    matrix, \code{"model.frame"} to return the model frame, or the name
+    of a function providing an alternative fitting algorithm. }
   \item{offset}{ this can be used to specify an a priori known component to
     be added to the predictor during fitting. \code{offset} terms
     can be included in the formula instead or as well, and if both
@@ -53,20 +55,24 @@ gnm(formula, eliminate = NULL, constrain = NULL, family = gaussian,
     model; if a starting value is \code{NA}, the default starting value
     will be used. Starting values need not be specified for eliminated
     parameters. } 
-  \item{control}{ a list of parameters for controlling the fitting process. See
-    \code{gnmControl} for details.}
+  \item{tolerance}{ a positive numeric value specifying the tolerance level for
+    convergence. }
+  \item{iterStart}{ a positive integer specifying the number of start-up iterations
+    to perform. }
+  \item{iterMax}{ a positive integer specifying the maximum number of main
+    iterations to perform. }
+  \item{trace}{ a logical value indicating whether the deviance
+    should be printed after each iteration. }
   \item{verbose}{ logical: if \code{TRUE} progress indicators are
     printed as the model is fitted, including a diagnostic error message
     if the algorithm restarts. } 
   \item{model}{ logical: if \code{TRUE} the model frame is returned. }
   \item{x}{ logical: if \code{TRUE} the local design matrix from the last
     iteration is returned. }
-  \item{vcov}{ logical: if \code{TRUE} the variance-covariance matrix of the
-    model coefficients is returned. }
   \item{termPredictors}{ logical: if \code{TRUE}, a matrix is returned
     with a column for each term in the model, containing the additive
     contribution of that term to the predictor }
-  \item{\dots}{ further arguments passed to or from other methods. }
+  \item{\dots}{ further arguments passed to the . }
 }
 \details{
   Models for \code{gnm} are specified by giving a symbolic description
@@ -96,18 +102,17 @@ gnm(formula, eliminate = NULL, constrain = NULL, family = gaussian,
   may also define their own plug-in functions, see \code{\link{Nonlin}}
   for details. 
 
-  The \code{eliminate} argument may be used to specify terms spanning
-  the space of a single factor, so that these terms are included
-  in the model, but the corresponding parameter estimates are excluded
-  from the standard model summaries. The terms in the \code{eliminate}
-  formula are included as the first terms in the model (since an
-  intercept is then redundant, none is fitted). The structure of these
-  terms is then exploited to improve computational efficiency  ---
-  substantially so if the number of eliminated parameters is large.  Use
-  of \code{eliminate} is designed for terms that are required in the
-  model but are not of direct interest (e.g., terms needed to fit
-  multinomial-response models as conditional Poisson models). See
-  \code{\link{backPain}} for an example. 
+  The \code{eliminate} argument may be used to specify a factor that
+  is to be included in the model, but excluded from \code{print()}
+  displays of the model object or its components obtained using accessor
+  functions such as \code{coef()} etc. The \code{eliminate}'d factor is
+  included as the first term in the model (since an intercept is then
+  redundant, none is fitted). The structure of the factor is exploited
+  to improve computational efficiency --- substantially so if the number
+  of eliminated parameters is large. Use of \code{eliminate} is designed
+  for terms that are required in the model but are not of direct
+  interest (e.g., terms needed to fit multinomial-response models as
+  conditional Poisson models). See \code{\link{backPain}} for an example. 
 
   For contingency tables, the data may be provided as an object of class
   \code{"table"} from which the frequencies will be extracted to use
@@ -116,7 +121,7 @@ gnm(formula, eliminate = NULL, constrain = NULL, family = gaussian,
   \code{"fitted.values"}, \code{"residuals"}, \code{"prior.weights"},
   \code{"weights"}, \code{"y"} and \code{"offset"} components of
   the returned \code{gnm} fit will be tables with the same format as the
-  data.
+  data, completed with \code{NA}s where necessary.
 
   For binomial models, the \code{response} may be specified as a factor
   in which the first level denotes failure and all other levels denote
@@ -124,12 +129,19 @@ gnm(formula, eliminate = NULL, constrain = NULL, family = gaussian,
   of successes and failures, or as a vector of the proportions of
   successes.
 
-  The \code{gnm} fitting process consists of two stages. In the start-up
+  The \code{gnm} fitting algorithm consists of two stages.  In the start-up
   iterations, any nonlinear parameters that are not specified by either the
-  \code{start} argument or a plug-in function are updated one parameter
-  at a time, then the linear parameters are jointly updated before the
-  next iteration. In the main iterations, all the parameters are jointly
-  updated. See \code{\link{gnmControl}} for more details.
+  \code{start} argument of \code{gnm} or a plug-in function are
+  updated one parameter at a time, then the linear parameters are
+  jointly updated before the next iteration. In the main iterations, all
+  the parameters are jointly updated, until convergence is reached or
+  the number or iterations reaches \code{iterMax}.
+
+  Convergence is judged by comparing the squared components of the score vector
+  with corresponding elements of the diagonal of the Fisher information
+  matrix. If, for all components of the score vector, the ratio is less
+  than \code{tolerance^2}, or the corresponding diagonal element of the
+  Fisher information matrix is less than 1e-20, iterations cease.
 
   By default, \code{gnm} uses an over-parameterized representation of
   the model that is being fitted. Only minimal identifiability constraints
@@ -145,7 +157,7 @@ gnm(formula, eliminate = NULL, constrain = NULL, family = gaussian,
   If appropriate constraints are known in advance, or have been
   determined from a \code{gnm} fit, the model may be (re-)fitted using
   the \code{constrain} argument to specify coefficients which should be
-  set to zero. Constraints may only be applied to non-eliminated
+  set to zero. Constraints should only be specified for non-eliminated
   parameters. \code{\link{update}} provides a convenient way of re-fitting a 
   \code{gnm} model with new constraints.
 }
@@ -165,7 +177,6 @@ gnm(formula, eliminate = NULL, constrain = NULL, family = gaussian,
   \item{ xlevels }{ a record of the levels of the factors used in fitting. }
   \item{ y }{ the response used. }
   \item{ offset }{ the offset vector used. }
-  \item{ control }{ the value of the \code{control} argument used. }
   \item{ coefficients }{ a named vector of coefficients. }
   \item{ eliminate }{ the number of eliminated parameters. }
   \item{ predictors }{ the fitted values on the link scale. }
@@ -187,16 +198,16 @@ gnm(formula, eliminate = NULL, constrain = NULL, family = gaussian,
   \item{ rank }{ the numeric rank of the fitted model. }
   
   The list may also contain the components \code{model}, \code{x},
-  \code{vcov}, or \code{termPredictors} if requested in the arguments to
-  \code{gnm}. 
+  or \code{termPredictors} if requested in the arguments to \code{gnm}. 
 
   If a binomial \code{gnm} model is specified by giving a two-column
   response, the weights returned by \code{prior.weights} are the total
   numbers of cases (factored by the supplied case weights) and the
   component \code{y} of the result is the proportion of successes.
   
-  The function \code{\link{summary}} may be used to obtain and print a summary
-  of the results.
+  The function \code{\link{summary.gnm}} may be used to obtain and print
+  a summary of the results, whilst \code{\link{plot.gnm}} may be used
+  for model diagnostics.
 
   The generic functions \code{\link{formula}}, \code{\link{family}},
   \code{\link{terms}}, \code{\link{coefficients}},
@@ -271,21 +282,23 @@ coef(doubleUnidiff)[coefs.of.interest]
 ##  Mult2.Factor1.election3 Mult2.Factor1.election4 
 ##               -0.1230682              -0.2105843
 
-##  Re-parameterize by setting Mult2.Factor1.election4 to zero
+##  Re-parameterize by setting Mult2.Factor1.election1 to zero
 getContrasts(doubleUnidiff, coefs.of.interest)
-##                            estimate        se
-##  Mult2.Factor1.election1 -0.3618399 0.2534762
-##  Mult2.Factor1.election2  0.3198951 0.1320034
-##  Mult2.Factor1.election3  0.0875308 0.1446842
-##  Mult2.Factor1.election4  0.0000000 0.0000000
+## [[1]]
+##                          estimate        SE    quasiSE    quasiVar
+## Mult2.Factor1.election1 0.0000000 0.0000000 0.22854380 0.052232270
+## Mult2.Factor1.election2 0.6817370 0.2401642 0.07395880 0.005469905
+## Mult2.Factor1.election3 0.4493740 0.2473519 0.09475932 0.008979329
+## Mult2.Factor1.election4 0.3618262 0.2534753 0.10934823 0.011957035
 
-##  Same thing but with election 1 as reference category:
+##  Same thing but with election 4 as reference category:
 getContrasts(doubleUnidiff, rev(coefs.of.interest))
-##                            estimate        se
-##  Mult2.Factor1.election4  0.3618399 0.2534746
-##  Mult2.Factor1.election3  0.4493707 0.2473524
-##  Mult2.Factor1.election2  0.6817351 0.2401645
-##  Mult2.Factor1.election1  0.0000000 0.0000000
+## [[1]]
+##                            estimate        SE    quasiSE    quasiVar
+## Mult2.Factor1.election4  0.00000000 0.0000000 0.10934823 0.011957035
+## Mult2.Factor1.election3  0.08754785 0.1446834 0.09475932 0.008979329
+## Mult2.Factor1.election2  0.31991082 0.1320023 0.07395880 0.005469905
+## Mult2.Factor1.election1 -0.36182617 0.2534753 0.22854380 0.052232270
 
 ##  Re-fit model with Mult2.Factor1.election1 set to zero
 doubleUnidiffConstrained <-

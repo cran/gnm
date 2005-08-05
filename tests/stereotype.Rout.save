@@ -1,6 +1,7 @@
 
 R : Copyright 2005, The R Foundation for Statistical Computing
-Version 2.1.1  (2005-06-20), ISBN 3-900051-07-0
+Version 2.2.1  (2005-12-20 r36812)
+ISBN 3-900051-07-0
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -11,7 +12,7 @@ Type 'contributors()' for more information and
 'citation()' on how to cite R or R packages in publications.
 
 Type 'demo()' for some demos, 'help()' for on-line help, or
-'help.start()' for a HTML browser interface to help.
+'help.start()' for an HTML browser interface to help.
 Type 'q()' to quit R.
 
 > library(gnm)
@@ -23,40 +24,49 @@ Type 'q()' to quit R.
 > .counts <- as.vector(t(.incidence))
 > .rowID <- factor(t(row(.incidence)))
 > backPain <- backPain[.rowID, ]
-> backPain$pain <- factor(rep(levels(backPain$pain), nrow(.incidence)),
-+                         levels = levels(backPain$pain), ordered = TRUE)
+> backPain$pain <- C(factor(rep(levels(backPain$pain), nrow(.incidence)),
++                           levels = levels(backPain$pain), ordered = TRUE),
++                    treatment)
 > 
-> oneDimensional <- gnm(.counts ~ pain + Mult(pain - 1, x1 + x2 + x3 - 1),
-+                       eliminate = ~ .rowID, family = "poisson",
-+                       data = backPain, iterStart = 3)
-Running start-up iterations...
-Running main iterations...........
+> noRelationship <- gnm(.counts ~ pain, eliminate = .rowID,
++                       family = "poisson", data = backPain)
+Initialising
+Running main iterations...
+Done
+> 
+> oneDimensional <- update(noRelationship,
++                          ~ . + Mult(pain - 1, x1 + x2 + x3 - 1))
+Initialising
+Running start-up iterations..
+Running main iterations...............
 Done
 > oneDimensional
 
 Call:
 gnm(formula = .counts ~ pain + Mult(pain - 1, x1 + x2 + x3 - 
-    1), eliminate = ~.rowID, family = "poisson", data = backPain, 
-    iterStart = 3)
+    1), eliminate = .rowID, family = "poisson", data = backPain)
 
 
 Coefficients:
-                                pain.L                                  pain.Q  
-                              13.90782                                -4.39698  
-                                pain.C                                  pain^4  
-                               7.07682                                -5.72008  
-                                pain^5                 Mult1.Factor1.painworse  
-                              -1.85272                                -2.80804  
+                              painsame                  painslight.improvement  
+                              16.15615                                15.68327  
+              painmoderate.improvement                  painmarked.improvement  
+                              12.45391                                19.91245  
+                   paincomplete.relief                 Mult1.Factor1.painworse  
+                              21.66408                                 4.27832  
                 Mult1.Factor1.painsame    Mult1.Factor1.painslight.improvement  
-                               0.13462                                -0.02405  
+                              -0.23224                                 0.01096  
 Mult1.Factor1.painmoderate.improvement    Mult1.Factor1.painmarked.improvement  
-                              -0.71960                                 0.85006  
+                               1.07714                                -1.32893  
      Mult1.Factor1.paincomplete.relief                        Mult1.Factor2.x1  
-                               1.45324                                -1.26053  
+                              -2.25353                                 0.82234  
                       Mult1.Factor2.x2                        Mult1.Factor2.x3  
-                              -0.72301                                -0.63666  
+                               0.47167                                 0.41535  
 
 Deviance:            303.1003 
-Pearson chi-squared: 433.3742 
+Pearson chi-squared: 433.3745 
 Residual df:         493 
+> 
+> 
+> 
 > 

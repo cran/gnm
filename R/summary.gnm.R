@@ -1,33 +1,51 @@
 summary.gnm <- function (object, dispersion = NULL, correlation = FALSE,
                           symbolic.cor = FALSE, ...) 
 {
-    if (is.null(dispersion)) { 
-        if (any(object$family$family == c("poisson", "binomial"))) 
-            dispersion <- 1
-        else if (object$df.residual > 0) {
-            if (any(object$weights == 0)) 
-                warning("observations with zero weight ",
-                        "not used for calculating dispersion")
-            dispersion <- sum(object$weights * object$residuals^2)/
-                object$df.residual
+    est.disp <- (!object$family$family %in% c("poisson", "binomial") &&
+                 is.null(dispersion) && object$df.residual > 0)
+    coefs <- coef(object)
+    if (object$rank > 0) {
+        cov.scaled <- vcov(object)
+        estimable <- checkEstimable(object, diag(length(coefs)), ...)
+        estimable[is.na(estimable)] <- FALSE
+        sterr <- sqrt(diag(cov.scaled))
+        is.na(sterr[!estimable]) <- TRUE
+        tvalue <- coefs/sterr
+        dn <- c("Estimate", "Std. Error")
+        if (!est.disp) {
+            pvalue <- 2 * pnorm(-abs(tvalue))
+            coef.table <- cbind(coefs, sterr, tvalue, pvalue)
+            dimnames(coef.table) <- list(names(coefs),
+                                         c(dn, "z value", "Pr(>|z|)"))
         }
-        else dispersion <- Inf
+        else if (object$df.residual > 0) {
+            pvalue <- 2 * pt(-abs(tvalue), object$df.residual)
+            coef.table <- cbind(coefs, sterr, tvalue, pvalue)
+            dimnames(coef.table) <- list(names(coefs),
+                                         c(dn, "t value", "Pr(>|t|)"))
+        }
+        else {
+            coef.table <- cbind(coefs, Inf)
+            dimnames(coef.table) <- list(names(coefs), dn)
+        }
     }
-    if (!"vcov" %in% names(object)){
-        coefs <- coef(object)
-        cov.unscaled <- update(object, vcov = TRUE, start = coef(object),
-                                    verbose = FALSE, trace = FALSE)$vcov
+    else {
+        coef.table <- matrix(, 0, 4)
+        dimnames(coef.table) <- list(NULL, c("Estimate", "Std. Error", 
+            "t value", "Pr(>|t|)"))
+        cov.scaled <- matrix(, 0, 0)
     }
-    else cov.unscaled  <- object$vcov
-    cov.scaled <- dispersion * cov.unscaled
-    ans <- c(object[c("call", "terms", "family", "deviance", "aic",
+    df.f <- nrow(coef.table)
+    ans <- c(object[c("call", "eliminate", "family", "deviance", "aic",
                       "df.residual", "iter")],
              list(deviance.resid = residuals(object, type = "deviance"), 
-                  coefficients = coef(object), dispersion = dispersion,
-                  cov.unscaled = cov.unscaled, cov.scaled = cov.scaled))
+                  coefficients = coef.table,
+                  dispersion = attr(cov.scaled, "dispersion"),
+                  df = c(object$rank, object$df.residual, df.f),
+                  cov.scaled = as.matrix(cov.scaled)))
     if (correlation & object$rank > 0) {
-        dd <- sqrt(diag(cov.unscaled))
-        ans$correlation <- cov.unscaled/outer(dd, dd)
+        dd <- sqrt(diag(cov.scaled))
+        ans$correlation <- cov.scaled/outer(dd, dd)
         ans$symbolic.cor <- symbolic.cor
     }
     class(ans) <- "summary.gnm"

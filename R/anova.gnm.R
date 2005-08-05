@@ -13,15 +13,29 @@ anova.gnm <- function (object, ..., dispersion = NULL, test = NULL)
     if (length(dotargs) > 0) 
         return(anova.glmlist(c(list(object), dotargs), dispersion = dispersion, 
             test = test))
-    varlist <- attr(object$terms, "variables")
+    varlist <- labels(object)
     x <- model.matrix(object)
-    varseq <- attr(x, "assign")
+    varlin <- length(attr(gnmTerms(object, NULL), "parsedLabels")[[1]]) -
+        !attr(object$terms, "intercept")
+    varseq <- attr(x, "assign") - (object$eliminate > 0)
     nvars <- max(0, varseq)
-    resdev <- resdf <- NULL
+    resdev <- resdf <- fit <- NULL
     if (nvars > 0) {
-        for (i in 0:(nvars - 1)) {
-            constrain <- replace(object$constrain, varseq > i, TRUE)
-            fit <- update(object, constrain = constrain, verbose = FALSE)
+        for (i in seq(nvars)) {
+            if (i <= varlin){
+                fit <- glm.fit(x = x[, varseq < i, drop = FALSE], 
+                               y = as.vector(object$y),
+                               offset = as.vector(object$offset), 
+                               start = object$start,
+                               weights = as.vector(object$prior.weights),
+                               family = object$family)
+            }
+            else {
+                constrain <- replace(object$constrain, varseq >= i, TRUE)
+                fit <- update(object, constrain = constrain,
+                              #start = object$coef,
+                              verbose = FALSE)
+            }
             resdev <- c(resdev, fit$deviance)
             resdf <- c(resdf, fit$df.residual)
         }
@@ -32,16 +46,16 @@ anova.gnm <- function (object, ..., dispersion = NULL, test = NULL)
     }
     else
         table <- data.frame(NA, NA, object$df.residual, object$deviance)
-    dimnames(table) <- list(c("NULL", attr(object$terms, "term.labels")),
+    dimnames(table) <- list(c("NULL", varlist),
                             c("Df", "Deviance", "Resid. Df", "Resid. Dev"))
     title <- paste("Analysis of Deviance Table", "\n\nModel: ", 
                    object$family$family, ", link: ", object$family$link, 
-                   "\n\nResponse: ", as.character(varlist[-1])[1],
+                   "\n\nResponse: ", as.character(formula(object)[[2]]),
                    "\n\nTerms added sequentially (first to last)\n\n", 
                    sep = "")
     df.dispersion <- Inf
     if (is.null(dispersion)) {
-        dispersion <- summary(object, dispersion = dispersion)$dispersion
+        dispersion <- attr(vcov(object), "dispersion")
         df.dispersion <- if (dispersion == 1) 
             Inf
         else object$df.residual

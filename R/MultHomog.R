@@ -21,12 +21,17 @@ MultHomog <- function(...){
         do.call("pprod", lapply(designList, "%*%", coef))
     }
 
-    localDesignFunction <- function(coef, ...) {
-        productList <- designList
-        for (i in seq(designList))
-            productList[[i]] <- designList[[i]] * 
-                drop(do.call("pprod", lapply(designList[-i], "%*%", coef)))
-        do.call("psum", productList)
+    localDesignFunction <- function(coef, ind = NULL, ...) {
+        X <- 0
+        vList <- lapply(designList, "%*%", coef)
+        for (i in seq(designList)) {
+            if (is.null(ind)) 
+                X <- X + designList[[i]] * drop(do.call("pprod", vList[-i]))
+            else
+                X <- X + designList[[i]][, ind] *
+                    drop(do.call("pprod", vList[-i]))
+        }
+        X
     }
 
     list(labels = labels, predictor = predictor,

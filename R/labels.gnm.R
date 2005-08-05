@@ -1,8 +1,6 @@
 labels.gnm <- function(object, ...) {
-    labelList <- as.list(attr(gnmTerms(object, object$call$eliminate),
-                              "termLabels"))
+    labels <- attr(terms(object), "term.labels")
     termAssign <- attr(model.matrix(object), "assign")[!object$constrain]
-    if (object$eliminate) termAssign <- termAssign[-seq(object$eliminate)]
-    unique(unlist(labelList)[termAssign])
+    unique(labels[termAssign])
 }
 

@@ -30,37 +30,36 @@
 \examples{
 set.seed(1)
 data(backPain)
+summary(backPain)
 
 ### Re-express as count data
-library(nnet)
-.incidence <- class.ind(backPain$pain)
-.counts <- as.vector(t(.incidence))
-.rowID <- factor(t(row(.incidence)))
-backPain <- backPain[.rowID, ]
-backPain$pain <- C(factor(rep(levels(backPain$pain), nrow(.incidence)),
-                          levels = levels(backPain$pain), ordered = TRUE),
-                   treatment)
+backPainLong <- expandCategorical(backPain, "pain")
 
 ### Fit models described in Table 5 of Anderson (1984)
 
 ### Logistic family models
-noRelationship <- gnm(.counts ~ pain, eliminate = ~ .rowID,
-                      family = "poisson", data = backPain)
+noRelationship <- gnm(count ~ pain, eliminate = id,
+                      family = "poisson", data = backPainLong)
 
 ## stereotype model
 oneDimensional <- update(noRelationship,
-                         ~ . + Mult(pain - 1, x1 + x2 + x3 - 1),
-                         iterStart = 3)
+                         ~ . + Mult(pain - 1, x1 + x2 + x3 - 1))
 
+## multinomial logistic
 threeDimensional <- update(noRelationship, ~ . + pain:(x1 + x2 + x3))
 
 ### Models to determine distinguishability in stereotype model
-.pain <- backPain$pain
+## constrain scale of category-specific multipliers
+oneDimensional <- update(noRelationship,
+                         ~ . + Mult(pain - 1, offset(x1) + x2 + x3 - 1))
+## obtain identifiable contrasts & id possibly indistinguishable slopes
+getContrasts(oneDimensional, 6:11)
+
+.pain <- backPainLong$pain
 
 levels(.pain)[2:3] <- paste(levels(.pain)[2:3], collapse = " | ")
 fiveGroups <- update(noRelationship,
-                     ~ . + Mult(as.ordered(.pain) - 1,
-                                x1 + x2 + x3 - 1))
+                     ~ . + Mult(.pain - 1, x1 + x2 + x3 - 1))
 
 levels(.pain)[4:5] <- paste(levels(.pain)[4:5], collapse = " | ")
 fourGroups <- update(fiveGroups)

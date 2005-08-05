@@ -8,7 +8,8 @@
 }
 \usage{
 MPinv(mat, eliminate = numeric(0), onlyFirstCol = FALSE,
-      onlyNonElim = FALSE, tolerance = 100*.Machine$double.eps)
+      onlyNonElim = FALSE, tolerance = 100*.Machine$double.eps,
+      rank = NULL)
 }
 \arguments{
   \item{mat}{ A real matrix, which should be symmetric unless
@@ -16,11 +17,16 @@ MPinv(mat, eliminate = numeric(0), onlyFirstCol = FALSE,
   \item{eliminate}{ Numeric.  A vector of indices identifying
     rows/columns which form a diagonal submatrix of \code{mat}. }
   \item{onlyFirstCol}{ Logical.  If \code{TRUE}, return only the first
-    column of the generalized inverse matrix; otherwise the whole matrix.}
+    non-eliminated column of the generalized inverse matrix; otherwise
+    the whole matrix.}
   \item{onlyNonElim}{ Logical.  If \code{TRUE}, return only rows/columns that
     are in the complement of the set specified in \code{eliminate}.}
   \item{tolerance}{ A positive scalar which determines the tolerance for
     detecting zeroes among the singular values. }
+  \item{rank}{Either \code{NULL}, in which case the rank of \code{mat} is
+    determined numerically; or an integer specifying the rank of
+    \code{mat} if it is known.  No check is made on the validity of any
+    non-\code{NULL} value.}
 }
 \details{
   Real-valuedness is not checked, neither is symmetry, nor the
