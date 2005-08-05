@@ -6,28 +6,35 @@ gnm <- function(formula, eliminate = NULL, constrain = NULL, family = gaussian,
     
     call <- match.call()
     
-    modelTerms <- gnmTerms(formula, eliminate)
-    falseFormula <- as.call(as.list(modelTerms))
-    environment(falseFormula) <- environment(formula)
-    
+    modelTerms <- gnmTerms(formula, eliminate)    
     modelData <- match.call(expand.dots = FALSE)
     argPos <- match(c("data", "subset", "weights", "na.action", "offset"),
                     names(modelData), 0)
     modelData <- as.call(c(as.name("model.frame"),
-                           formula = falseFormula,
+                           formula = modelTerms,
                            as.list(modelData)[argPos],
                            drop.unused.levels = TRUE))
-    modelData <- eval(modelData, parent.frame())   
-    attr(modelTerms, "variables") <- attr(attr(modelData, "terms"),
-                                          "variables")
+    modelData <- eval(modelData, parent.frame())
 
     if (!is.null(eliminate)) {
-        toElim <- attr(terms(eliminate), "factors")
-        if (ncol(toElim) != 1 |
-            any(attr(modelData, "dataClasses")[rownames(toElim)] != "factor"))
-            stop("'eliminate' formula must contain one term only,",
-                 " which must be a factor")
+        if (!inherits(eliminate, "formula")) {
+            stop("eliminate argument must be a formula")
+        }
+        elimTerms <- terms(eliminate)
+        if (attr(elimTerms, "response") == 1) {
+            stop("eliminate formula cannot have a response variable")
+        }
+        toElim <- attr(elimTerms, "factors")
+        if (any(attr(attr(modelData, "terms"),
+                     "dataClasses")[rownames(toElim)] != "factor"))
+            stop("variables in 'eliminate' formula must be factors")
+        elimCols <- model.matrix(update.formula(eliminate, ~ -1 + .),
+                                                data = modelData)
+        nElim <- ncol(elimCols)
+        if (nrow(unique(elimCols)) > nElim)
+            stop("'eliminate' formula is not equivalent to single factor")
     }
+    else nElim <- 0
     
     if (method == "model.frame") {
         attr(modelData, "terms") <- attr(modelTerms, "terms")
@@ -91,11 +98,8 @@ gnm <- function(formula, eliminate = NULL, constrain = NULL, family = gaussian,
         if (termPredictors) fit$termPredictors <- NULL
     }
     else {
-        gnmEnvironment <- parent.frame()
-        modelTools <- gnmTools(gnmEnvironment, modelTerms, modelData, x,
-                               eliminate, termPredictors)
+        modelTools <- gnmTools(modelTerms, modelData, x, termPredictors)
         nParam <- length(modelTools$classID)
-        nElim <- length(modelTools$eliminate)
 
         if (method == "coefNames") return(names(modelTools$classID))
 
@@ -110,7 +114,7 @@ gnm <- function(formula, eliminate = NULL, constrain = NULL, family = gaussian,
                 if (is.null(eliminate))
                     choice <- names(modelTools$classID)
                 else
-                    choice <- names(modelTools$classID)[-modelTools$eliminate]
+                    choice <- names(modelTools$classID)[-seq(nElim)]
                 picked <- pickFrom(choice,
                               setlabels = "Coefficients to constrain",
                               title = "Constrain one or more gnm coefficients",
@@ -138,7 +142,7 @@ gnm <- function(formula, eliminate = NULL, constrain = NULL, family = gaussian,
         }
             
         
-        fit <- gnmFit(modelTools, y, constrain, family, weights,
+        fit <- gnmFit(modelTools, y, constrain, nElim, family, weights,
                        offset, nObs = nObs, start = start,
                        control = gnmControl(...), verbose, x, vcov,
                        termPredictors)

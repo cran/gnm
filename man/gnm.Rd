@@ -15,8 +15,10 @@ gnm(formula, eliminate = NULL, constrain = NULL, family = gaussian,
 }
 \arguments{
   \item{formula}{ a symbolic description of the nonlinear predictor. }
-  \item{eliminate}{ an optional formula consisting of a single factor
-    to be used instead of an intercept in the predictor. }
+  \item{eliminate}{ an optional formula of the form \code{~ model},
+    i.e., a formula with no response variable specified, to be included in the
+    predictor but excluded from the output of \code{print()},
+    \code{summary()}, \code{coef()}, etc.  See details. }
   \item{constrain}{ coefficients to set to zero, specified by a numeric
     vector of indices, a logical vector, or "pick" to select from a Tk
     dialog. }
@@ -94,14 +96,18 @@ gnm(formula, eliminate = NULL, constrain = NULL, family = gaussian,
   may also define their own plug-in functions, see \code{\link{Nonlin}}
   for details. 
 
-  The \code{eliminate} argument may be used to specify a single factor
-  to be used instead of an intercept in the model of the predictor. This
-  feature is designed for such factors that are required in the model
-  but are not of direct interest. If the factor is specified using
-  \code{eliminate}, the effects of the factor will be estimated more
-  efficiently. At the end of the fitting process these parameters are
-  eliminated from the vector of coefficents. See \code{\link{backPain}}
-  for an example.  
+  The \code{eliminate} argument may be used to specify terms spanning
+  the space of a single factor, so that these terms are included
+  in the model, but the corresponding parameter estimates are excluded
+  from the standard model summaries. The terms in the \code{eliminate}
+  formula are included as the first terms in the model (since an
+  intercept is then redundant, none is fitted). The structure of these
+  terms is then exploited to improve computational efficiency  ---
+  substantially so if the number of eliminated parameters is large.  Use
+  of \code{eliminate} is designed for terms that are required in the
+  model but are not of direct interest (e.g., terms needed to fit
+  multinomial-response models as conditional Poisson models). See
+  \code{\link{backPain}} for an example. 
 
   For contingency tables, the data may be provided as an object of class
   \code{"table"} from which the frequencies will be extracted to use

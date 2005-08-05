@@ -1,5 +1,5 @@
 "gnmTools" <-
-    function(gnmEnvironment, gnmTerms, gnmData, x, eliminate, termPredictors)
+    function(gnmTerms, gnmData, x, termPredictors)
 {
     labelList <- attr(gnmTerms, "parsedLabels")
     prefixList <- attr(gnmTerms, "prefixLabels")
@@ -13,24 +13,22 @@
     termTools <- factorAssign <- labelList
     for (i in seq(labelList)) {
         if (inherits(labelList[[i]], "Nonlin")) {
-            termTools[[i]] <- eval(attr(labelList[[i]], "call"),
-                                   envir = gnmData, enclos = gnmEnvironment)
+            termTools[[i]] <- eval(attr(labelList[[i]], "call"), gnmData,
+                                   environment(gnmTerms))
             factorAssign[[i]] <-
                 structure(rep(i, length(termTools[[i]]$labels)),
                           names = paste(prefixList[[i]], ".",
                           termTools[[i]]$labels, sep = ""))
         }
         else {
-            termTools[[i]] <- model.matrix(reformulate(labelList[[i]]),
+            termTools[[i]] <- model.matrix(terms(reformulate(labelList[[i]]),
+                                                 keep.order = TRUE),
                                            data = gnmData)
             factorAssign[[i]] <- structure(rep(i, ncol(termTools[[i]])),
                                            names = paste(prefixList[[i]],
                                            colnames(termTools[[i]]), sep = ""))
         }
     }
-
-    eliminate <- seq(sum(attr(termTools[[1]],
-                              "assign") == 1))[!is.null(eliminate)]
 
     factorAssign <- do.call("c", factorAssign)
 
@@ -109,7 +107,11 @@
                   dimnames = list(NULL, names(factorAssign)))
     }
 
-    toolList <- list(eliminate = eliminate, classID = thetaClassID,
+    theta <- start()
+    unestimable <- apply(localDesignFunction(theta, factorList(theta)) == 0,
+                                             2, all)
+
+    toolList <- list(unestimable = unestimable, classID = thetaClassID,
                      start = start, factorList = factorList,
                      predictor = predictor,
                      localDesignFunction = localDesignFunction)
