@@ -8,11 +8,12 @@
 \usepackage{Sweave}
 \usepackage{alltt}
 \usepackage{amsmath}
-\usepackage{times}
-\usepackage{courier}
+%\usepackage{times}
+%\usepackage[scaled]{couriers}
+\usepackage{txfonts} % Times, with Belleek math font and txtt for monospaced
 \usepackage{booktabs}
 \usepackage[round,authoryear]{natbib}
-\usepackage[left=2cm,top=3cm,nohead]{geometry}
+\usepackage[left=2cm,top=2.5cm,nohead]{geometry}
 \usepackage{hyperref}
 \usepackage{moreverb}
 
@@ -53,6 +54,7 @@ through a Professorial Fellowship.}\\
 
 \section{Introduction}
 
+
 The \Rpackage{gnm} package provides facilities for fitting
 \emph{generalized nonlinear models}, i.e., regression models in which the
 link-transformed mean is described as a sum of predictor terms, some of
@@ -69,7 +71,8 @@ form of standard help pages, as viewed in R by, for example, \texttt{?gnm} or
 \texttt{help(gnm)}, is supplemented rather than replaced by the present
 document.
 
-We begin below with a preliminary note (Section \ref{glms}) on ways in which
+We begin below with a preliminary note (Section \ref{glms}) on some
+ways in which
 the \Rpackage{gnm} package extends R's facilities for specifying, fitting
 and working with generalized \emph{linear} models.  Then (Section
 \ref{nonlinear} onwards) the facilities for nonlinear terms are introduced,
@@ -105,12 +108,14 @@ can be used also with the familiar \Rfunction{lm} and \Rfunction{glm}
 model-fitting functions.  These are: three new data-manipulation functions
 \Rfunction{Diag}, \Rfunction{Symm} and \Rfunction{Topo}, for setting up structured interactions between factors; a new \Rclass{family} function,
 \Rfunction{wedderburn},
-for modelling a response variable in $[0,1]$ with the variance function
+for modelling a continuous
+response variable in $[0,1]$ with the variance function
 $V(\mu) = \mu^2(1-\mu)^2$ as in \citet{Wedd74};
 and a new generic function \Rfunction{termPredictors} which
 extracts the contribution of each term to the predictor from a fitted model
 object.  These functions are briefly introduced here, before we move on to
-nonlinear models in Section \ref{nonlinear}.
+the main purpose of the package,
+nonlinear models, in Section \ref{nonlinear}.
 
 \subsection{\Rfunction{Diag} and \Rfunction{Symm}}
 
@@ -253,7 +258,7 @@ fit <- fitted(logitModel)
 print(sum((barley$y - fit)^2 / (fit * (1-fit))^2))
 @
 This agrees with the chi-squared value reported on page 331 of \citet{McCu89},
-which differs slightly from Wedderburn's reported value.
+which differs slightly from Wedderburn's own reported value.
 
 \subsection{\Rfunction{termPredictors}}
 
@@ -274,12 +279,14 @@ contributions of different terms or groups of terms.
 \section{Nonlinear Terms}
 \label{nonlinear}
 
-The \Rpackage{gnm} package provides a flexible framework for the specification
-and
-estimation of generalized models with nonlinear terms. Multiplicative
+The main purpose of the \Rpackage{gnm} package is to provide
+a flexible framework for the specification and
+estimation of generalized models with nonlinear terms.  Multiplicative
 interaction terms can be estimated using the in-built capability of the
-\Rfunction{gnm} function and are specified in the model formula using the symbolic
-function \Rfunction{Mult}. Other nonlinear terms can be estimated using plug-in
+\Rfunction{gnm} function and are specified in the model formula using the
+symbolic
+function \Rfunction{Mult}.  Other nonlinear terms can be estimated using
+plug-in
 functions for \Rfunction{gnm} and are specified using \Rfunction{Nonlin}.
 
 There are two plug-in functions currently made available in
@@ -371,7 +378,8 @@ The \Rfunction{MultHomog} function provides the tools required to fit
 multiplicative interaction terms with one component in which the constituent
 multipliers are the effects of two or more factors and the effects of these
 factors are constrained to be equal when the factor levels are equal. The
-arguments of \Rfunction{MultHomog} are the factors in the interaction, which are
+arguments of \Rfunction{MultHomog} are the factors in the interaction,
+which are
 assumed to be objects of class \Rclass{factor}.
 
 As an example, consider the following association model with homogeneous
@@ -410,8 +418,9 @@ w_f = \frac{e^{\delta_f}}{\sum_i e^{\delta_i}}
 \]
 and estimating the $\delta_f$.
 
-Factors in the interaction are passed to unspecified arguments of
-\Rfunction{Dref}. For example, the following diagonal reference model for
+Factors defining the diagonal reference term
+are passed as unspecified arguments to
+\Rfunction{Dref}.  For example, the following diagonal reference model for
 a contingency table classified by the row factor \Robject{R}
 and the column factor \Robject{C},
 \[
@@ -423,7 +432,8 @@ would be specified by the formula
     mu \twiddle\ -1 + Nonlin(Dref(R, C))
 \end{alltt}
 
-\Rfunction{Dref} has one specified argument \Rfunarg{formula}, which is a symbolic
+\Rfunction{Dref} has one specified argument, \Rfunarg{formula},
+which is a symbolic
 description of the dependence of $\delta_f$ on any covariates.
 For example, the formula
 \begin{alltt}
@@ -432,7 +442,7 @@ For example, the formula
 specifies the following diagonal reference model
 \[
 \mu_{rc} = \beta_Xx + \frac{e^{\xi_1 + \beta_1x}}{e^{\xi_1 + \beta_1x} + e^{\xi_2 + \beta_2x}}\gamma_r +
-\frac{e^{\xi_2 + \beta_2x}}{e^{\xi_1 + \beta_x} + e^{\xi_2 + \beta_2x}}\gamma_c,
+\frac{e^{\xi_2 + \beta_2x}}{e^{\xi_1 + \beta_x} + e^{\xi_2 + \beta_2x}}\gamma_c.
 \]
 The default value of \Rfunarg{formula} is \Robject{\twiddle 1}, so that
 constant weights are estimated. The coefficients returned by \Rfunction{gnm} are
@@ -443,7 +453,7 @@ $\beta_f$, rather than the implied weights $w_f$.
 
 Custom plug-in functions may be written to enable \Rfunction{gnm} to fit
 nonlinear terms that can not be specified by \Rfunction{Mult}
-or the plug-in functions provided by the \Rpackage{gnm} package.
+or through existing plug-in functions provided by the \Rpackage{gnm} package.
 
 There are no constraints on the arguments that a plug-in function may
 take.  However it is important that \Rfunction{Nonlin}, when given a call to the
@@ -483,14 +493,14 @@ which can be obtained using the function \Rfunction{getModelFrame}.
 
 For example, the factors in a \Rfunction{Dref} term are passed directly to
 unspecified arguments, so the dummy variables for these factors can be found as
-follows
+follows:
 \begin{alltt}
     # get design matrices for Dref factors
     designList <- lapply(list(...), class.ind)
 \end{alltt}
 But any covariates on which the weights depend are only represented symbolically
 in the \Rfunarg{formula} argument, so the design matrix for these variables must
-be found in the context of the model frame
+be found in the context of the model frame:
 \begin{alltt}
     ## get design matrix for local structure
     gnmData <- getModelFrame()
@@ -517,7 +527,7 @@ three components:
   argument \Rfunarg{ind}, which specifies the index of a column to be returned
   instead of the full matrix.
 \end{description}
-and optionally one further component
+and optionally one further component,
 \begin{description}
 \item[\Robject{start}]
   a vector of default starting values for the
@@ -583,8 +593,8 @@ The \Rfunction{gnm} function has a number of arguments which affect the way a
 model will be fitted.  Basic control parameters can be set using the arguments
 \Rfunarg{tolerance}, \Rfunarg{iterStart} and \Rfunarg{iterMax}. Starting values
 for the parameter estimates can be set by \Rfunarg{start} and parameters can be
-constrained to zero by specifying a \Rfunarg{constrain} argument. Finally
-parameters of a stratification factor can be handled more efficiently by
+constrained to zero by specifying a \Rfunarg{constrain} argument.
+Parameters of a stratification factor can be handled more efficiently by
 specifying the factor in an \Rfunarg{eliminate} argument. These options are
 described in more detail below.
 
@@ -607,7 +617,7 @@ reached \Rfunarg{iterMax} if the convergence criteria have been met, with
 tolerance specified by \Rfunarg{tolerance}. Convergence is judged by comparing
 the squared components of the score vector with corresponding elements of the
 diagonal of the Fisher information matrix. If, for all components of the score
-vector, the ratio is less than \Robject{tolerance$^2$}, or the corresponding diagonal
+vector, the ratio is less than \texttt{tolerance\^{}2}, or the corresponding diagonal
 element of the Fisher information matrix is less than 1e-20, the algorithm is
 deemed to have converged.
 
@@ -734,7 +744,8 @@ generalized nonlinear model. However, the simple constraints imposed by
 \Rfunarg{constrain} are often sufficient to make particular coefficients of
 interest identifiable. The functions \Rfunction{checkEstimable} or
 \Rfunction{getContrasts}, described in Section \ref{Methods},
-may be used to check whether particular contrasts are estimable.
+may be used to check whether particular combinations of parameters
+are estimable.
 
 \subsection{Using \Rfunarg{eliminate}}
 \label{eliminate}
@@ -760,8 +771,8 @@ However specifying a stratification factor through \Rfunarg{eliminate} has two
 advantages over the standard specification. First, the structure of the
 eliminated factor is exploited so that computational speed is improved ---
 substantially so if the number of eliminated parameters is large. Second, the
-eliminated parameters are excluded from summaries of the model so that they
-focus on the coefficients of interest.
+eliminated parameters are excluded from summaries of the model so that the
+focus is on the coefficients of interest.
 
 The \Rfunarg{eliminate} feature is useful, for example, when
 multinomial-response models are fitted by using the well known equivalence
@@ -776,6 +787,9 @@ over-parameterized model representations.
 
 \section{Methods and Accessor functions}
 \label{Methods}
+
+\subsection{Methods}
+\label{specificMethods}
 
 The \Rfunction{gnm} function returns
 an object of class \Robject{c("gnm", "glm", "lm")}. There
@@ -847,8 +861,17 @@ parameterization of the model. In particular, standard errors calculated using
 the variance-covariance matrix will only be valid for parameters or contrasts
 that are estimable!
 
-The \Rfunction{checkEstimable} function can be used to check the estimability of
-contrasts. Consider the following model, that is described later in Section
+\subsection{\Rfunction{checkEstimable}}
+\label{checkEstimable}
+
+The \Rfunction{checkEstimable} function can be used to check the
+estimability of a linear combination of parameters.  For non-linear
+combinations the same function can be used to check estimability based on
+the (local) vector of partial derivatives.  The \Rfunction{checkEstimable}
+function provides a numerical version of the sort of algebraic test
+described in \citet{CatcMorg97}.
+
+Consider the following model, that is described later in Section
 \ref{Unidiff}:
 <<Double_UNIDIFF_model>>=
 data(cautres)
@@ -880,7 +903,7 @@ Then their estimability can be checked using \Rfunction{checkEstimable}
 checkEstimable(doubleUnidiff, contrMatrix)
 @
 which confirms that the effects for the other three levels are estimable when
-the effect for the last level is set to zero.
+the parameter for the first level is set to zero.
 
 However, applying the equivalent constraint to the second constituent
 multiplier in the interaction is not sufficient to make the parameters in that
@@ -896,6 +919,9 @@ contrMatrix[contrCoefs, 2:nContr] <- rbind(contr[nContr, ], contr[-nContr, ])
 checkEstimable(doubleUnidiff, contrMatrix)
 @
 
+\subsection{\Rfunction{getContrasts}, \Rfunction{se}}
+\label{getContrasts}
+
 To investigate simple ``sum to zero'' contrasts such as those above, it
 is easiest to use the \Rfunction{getContrasts} function, which checks the
 estimability of the contrasts and returns the parameter estimates with their
@@ -904,15 +930,78 @@ in the first multiplicative interaction term, the differences between each
 election and the first can be obtained as follows:
 <<Get_contrasts_1>>=
 coefs.of.interest <- grep("Mult1.Factor1", names(coef(doubleUnidiff)))
-getContrasts(doubleUnidiff, coefs.of.interest)
+print(myContrasts <- getContrasts(doubleUnidiff, coefs.of.interest))
 @ %def
-Attempting to obtain the equivalent contrasts for the second
-(religion-vote association) multiplier produces the
-following result:
-<<Get_contrasts_2>>=
-coefs.of.interest <- grep("Mult1.Factor2", names(coef(doubleUnidiff)))
-getContrasts(doubleUnidiff, coefs.of.interest)
+Visualization of estimated contrasts using
+`quasi standard errors' \citep{Firt03,FirtMene04} is achieved by plotting
+the resulting object:
+\begin{center}
+<<qvplot, fig = TRUE>>=
+plot(myContrasts[[1]], levelNames = paste("election", c(1,2,3,4)),
+  main = "Relative strength of religion-vote association, log scale")
+@
+\end{center}
+%Attempting to obtain the equivalent contrasts for the second
+%(religion-vote association) multiplier produces the
+%following result:
+%<<Get_contrasts_2>>=
+%coefs.of.interest <- grep("Mult1.Factor2", names(coef(doubleUnidiff)))
+%getContrasts(doubleUnidiff, coefs.of.interest)
+%@ %def
+
+For more general linear combinations of parameters
+than contrasts,
+the lower-level \Rfunction{se} function (which is called internally by
+\Rfunction{getContrasts} and by the \Rmethod{summary} method)
+can be used directly.  See \texttt{help(se)} for details.
+
+\subsection{\Rfunction{residSVD}}
+\label{residSVD}
+Sometimes it is useful to operate on the residuals of a model in order
+to create informative summaries of residual variation, or to obtain good
+starting values for additional parameters in a more elaborate model.  The
+relevant arithmetical operations are weighted means of the so-called
+\emph{working residuals}.
+
+The \Rfunction{residSVD} function facilitates one particular residual
+analysis that is often useful when considering multiplicative interaction
+between factors as a model elaboration: in effect, \Rfunction{residSVD}
+provides a direct estimate of the parameters of such an interaction, by
+performing an appropriately weighted singular value decomposition on the
+working residuals.
+
+As an illustration, consider the biplot model described in
+Section~\ref{biplot} below.  We can proceed by fitting a smaller model,
+then use \Rfunction{residSVD} to obtain starting values for the parameters
+in the bilinear term:
+@
+<<residSVD>>=
+emptyModel <- gnm(y ~ -1, family = wedderburn, data = barley)
+biplotStart <- residSVD(emptyModel, barley$site, barley$variety, d = 2)
+biplotModel <- gnm(y ~ -1 + Mult(-1 + site, -1 + variety, multiplicity = 2), family = wedderburn, data = barley, start =  biplotStart)
 @ %def
+In this instance, the
+use of purposive (as opposed to the default, random) starting values
+had little effect: the fairly large number of iterations needed in this
+example is caused by a rather flat (quasi-)likelihood surface near the
+maximum, not by
+poor starting values.  In other situations, the use of \Rfunction{residSVD}
+may speed the calculations dramatically (see for example Section
+\ref{GAMMI}), or it may be crucial to success in
+locating the MLE (for example see \texttt{help(House2001)}, where
+the number of multiplicative parameters is in the hundreds).
+
+The \Rfunction{residSVD} result in this instance
+provides a crude approximation to the MLE
+of the enlarged model, as can be seen in the following plot:
+\begin{center}
+<<residSVDplot, fig = TRUE, echo = FALSE>>=
+plot(coef(biplotModel), biplotStart,
+main = "Comparison of residSVD and MLE
+for a 2-dimensional biplot model")
+@ %def
+\end{center}
+
 
 \section{Examples}
 \label{Examples}
@@ -1081,9 +1170,11 @@ and the origin and destination weights can be evaluated as below
 <<Class_mobility_weights>>=
 prop.table(exp(coef(classMobility)[2:3]))
 @ %def
-This model is slightly different from that reported by \citet{Clif93}.  The reason
-for this is unclear: we are confident that the above results are correct for the
-data as given in \citet{Clif93}, but have not been able to confirm that the data
+These results are slightly different from those reported by \citet{Clif93}.
+The reason for this is unclear: we are confident that the
+above results are correct for the
+data as given in \citet{Clif93}, but have not been able to confirm
+that the data
 as printed in the journal were exactly as used in Clifford and Heath's
 analysis.
 
@@ -1223,21 +1314,19 @@ Deviance Residuals:
 Coefficients:
                          Estimate Std. Error t value Pr(>|t|)
 AGEM                      0.06364    0.07375   0.863  0.38859
-MRMM                     -0.32425    0.07766  -4.175 3.44e-05 ***
-FRMF                     -0.25324    0.07681  -3.297  0.00104 **
+MRMM                     -0.32425    0.07766  -4.175 3.44e-05
+FRMF                     -0.25324    0.07681  -3.297  0.00104
 MWORK                    -0.06430    0.07431  -0.865  0.38727
 MFCM                     -0.06043    0.07123  -0.848  0.39663
 Dref(MOPLM, FOPLF).MOPLM -0.33730         NA      NA       NA
 Dref(MOPLM, FOPLF).FOPLF -0.02507         NA      NA       NA
-Dref(MOPLM, FOPLF).1      4.95123    0.16639  29.757  < 2e-16 ***
-Dref(MOPLM, FOPLF).2      4.86328    0.10436  46.601  < 2e-16 ***
-Dref(MOPLM, FOPLF).3      4.86458    0.12855  37.842  < 2e-16 ***
-Dref(MOPLM, FOPLF).4      4.72343    0.13523  34.928  < 2e-16 ***
-Dref(MOPLM, FOPLF).5      4.43516    0.19315  22.963  < 2e-16 ***
-Dref(MOPLM, FOPLF).6      4.18873    0.17142  24.435  < 2e-16 ***
-Dref(MOPLM, FOPLF).7      4.43379    0.16903  26.231  < 2e-16 ***
----
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Dref(MOPLM, FOPLF).1      4.95123    0.16639  29.757  < 2e-16
+Dref(MOPLM, FOPLF).2      4.86328    0.10436  46.601  < 2e-16
+Dref(MOPLM, FOPLF).3      4.86458    0.12855  37.842  < 2e-16
+Dref(MOPLM, FOPLF).4      4.72343    0.13523  34.928  < 2e-16
+Dref(MOPLM, FOPLF).5      4.43516    0.19315  22.963  < 2e-16
+Dref(MOPLM, FOPLF).6      4.18873    0.17142  24.435  < 2e-16
+Dref(MOPLM, FOPLF).7      4.43379    0.16903  26.231  < 2e-16
 
 (Dispersion parameter for gaussian family taken to be 0.7384355)
 
@@ -1402,14 +1491,15 @@ son's social
 class (\Robject{dest}) and son's education level (\Robject{educ}).
 In this case, we can consider the
 importance of the association between the social class of father and son across
-the education levels:
+the education levels.  We omit the sub-table which corresponds to level 7 of
+\Robject{dest}, because its information content is negligible:
 @
 <<UNIDIFF_model>>=
 set.seed(1)
 data(yaish)
-unidiff <- gnm(Freq ~ educ:orig + educ:dest +
-               Mult(Exp(-1 + educ), orig:dest), family = poisson,
-               data = yaish)
+unidiff <- gnm(Freq ~ educ*orig + educ*dest +
+               Mult(Exp(-1 + educ), -1 + orig:dest), family = poisson,
+               data = yaish, subset = (dest != 7))
 coefs.of.interest <- grep("Mult1.Factor1", names(coef(unidiff)))
 coef(unidiff)[coefs.of.interest]
 @ %def
@@ -1490,23 +1580,29 @@ treatment <- interaction(wheat$tillage, wheat$summerCrop, wheat$manure,
                          wheat$N, sep = "")
 @ %def
 Now we can fit the AMMI-1 model, to the scaled yields using the combined
-treatment factor and the year factor from the \Robject{wheat} dataset:
+treatment factor and the year factor from the \Robject{wheat} dataset.  We
+will proceed by first fitting the main effects model, then using
+\Rfunction{residSVD} (see Section \ref{residSVD}) for the parameters
+of the multiplicative term:
 @
 <<AMMI_model>>=
-bilinear1 <- gnm(yield.scaled ~ year + treatment + Mult(year, treatment),
-                 family = gaussian, data = wheat)
+mainEffects <- gnm(yield.scaled ~ year + treatment, family = gaussian,
+                   data = wheat)
+svdStart <- residSVD(mainEffects, year, treatment, 3)
+bilinear1 <- update(mainEffects, . ~ . +
+                    Mult(year - 1, treatment - 1),
+                    start = c(coef(mainEffects), svdStart[,1]))
 @ %def
-and compare the AMMI-1 model to the main effects model
+We can compare the AMMI-1 model to the main effects model,
 @
 <<AOD>>=
-mainEffects <- glm(yield.scaled ~ year + treatment, family = gaussian,
-                   data = wheat)
 anova(mainEffects, bilinear1)
 @ %def
 giving the same results as in Table 1 of \citet{Varg01} (up to error caused by
 rounding).
 
 \subsection{Biplot Models}
+\label{biplot}
 
 Biplots are used to display two-dimensional data transformed into a space
 spanned by linearly independent vectors, such as the principal components or
@@ -1734,6 +1830,10 @@ We list here, for easy reference, all of the user-level functions in the
     &	\Rfunction{checkEstimable}	&  check whether one or more parameter
                                            combinations in a
                                            \Rclass{gnm} model is identified \\
+    &   \Rfunction{exitInfo}    &  print numerical details of last iteration
+                                   when  \Rfunction{gnm} has not converged \\
+    &	\Rfunction{residSVD}	&  multiplicative approximation of
+                                   model residuals	\\
     &	\Rfunction{se}	&  get standard errors of linear parameter
                            combinations in \Rclass{gnm} models	\\
     &	\Rfunction{termPredictors}	&  (\emph{generic}) extract term
@@ -1741,14 +1841,16 @@ We list here, for easy reference, all of the user-level functions in the
     \midrule
     \multicolumn{3}{l}{\textbf{Auxiliary Functions}}			\\
     \midrule
-    &	\Rfunction{getModelFrame}	&  get the model frame in use by
+    &	\Rfunction{asGnm}	&  coerce an object of class \Rclass{lm} or
+                                   \Rclass{glm} to class \Rclass{gnm} 	\\
+    &   \Rfunction{expandCategorical}   & expand a data frame by re-expressing
+                                          categorical data as counts \\
+    &	\Rfunction{getModelFrame} &  get the model frame in use by
                                            \Rfunction{gnm}	\\
     &	\Rfunction{MPinv}	&  Moore-Penrose pseudoinverse of a
                                    real-valued matrix	\\
-    &	\Rfunction{residSVD}	&  multiplicative approximation of
-                                   model residuals	\\
-    &   \Rfunction{expandCategorical}   & expand a data frame by re-expressing
-                                          categorical data as counts \\
+    &	\Rfunction{qrSolve}	&  Minimum-length solution of a linear system\\
+
 \end{tabular*}
 \end{table}
 
@@ -1757,101 +1859,60 @@ We list here, for easy reference, all of the user-level functions in the
 
 The new features, improvements and changes in behaviour since the last release
 are given below. For bug fixes since the last release and the changes made in
-previous releases, see the CHANGES file in the package directory.
+previous releases, see the CHANGES file in the \texttt{inst} directory of
+the package.
 
 \begin{verbatimtab}
-Changes in gnm 0.8-0
-=======================
+Changes in gnm 0.8-1
+====================
 
 New Features
 ------------
 
-    o	added "model.matrix" option for 'method' argument of gnm() so that
-	model matrix can be obtained much faster. The new method is used in
-	model.matrix.gnm() and vcov.gnm().
+    o	added the `method' argument to MPinv(), to allow the method of 
+	calculation to be specified.  Permitted values are "svd" to
+	compute the pseudo-inverse by singular value decomposition, 
+	and "chol" to use the Cholseky decomposition instead.  The latter
+	is valid only for symmetric matrices, but is usually faster
+    	and more accurate.
 
-    o	added new utility function residSVD(), to facilitate the calculation
-        of good starting values for parameters in certain Mult() terms.
+    o	added the `lsMethod' argument to gnm(), to allow specification of 
+	the numerical method used for least-squares calculations in the
+	core of the iterative algorithm.  Permitted options are "chol" and 
+        "qr".
 
-    o	added new dataset House2001, to illustrate the use of gnm in
-        Rasch-type scaling of legislator votes.
+    o	added new function qrSolve(), which behaves like base::qr.coef but 
+        in the non-full-rank case gives the minimum-length solution rather
+        than an arbitrary solution determined by pivoting.
 
-    o	added new utility function expandCategorical() for expanding data frame
-	on the basis of a categorical variable.
+    o	added .onUnload() so that compiled code is unloaded when namespace of 
+	package is unloaded using unloadNamespace().
 
-    o	added formula.gnm() method - returns formula from "gnm" object excluding
-	the 'eliminate'd factor where necessary.
+    o	added 'coef' argument to model.matrix.gnm() so that the model matrix 
+        can be evaluated at any specified value of the parameter vector. 
+
+    o	added asGnm() generic to coerce linear model objects to gnm objects.
+
+    o	added exitInfo() for printing numerical details of last iteration on 
+	non-convergence of gnm().
+
+    o	added new dataset, friend, to illustrate a workaround to fit a
+	homogeneous RC(2) using gnm() - documented in help file for MultHomog().
 
 Improvements
 ------------
 
-    o	gnm() now takes less time to run due to improvements made in internal
-	functions.
+    o	gnm() now takes less time per (main) iteration, due to improvements 
+        made internally in the iterative algorithm.  These include 
+        pre-scaling of the local design matrix, and Levenberg-Marquardt 
+        adjustment of the least-squares solvers so that rank determination
+        is no longer necessary.  
 
-    o   the fitting algorithm used by gnm() now copes better with zero-valued
-        residuals.
+    o	the default convergence tolerance has been tightened (from 1e-4 to 1e-6)
 
-    o	output given by gnm() when 'trace' = TRUE or 'verbose' = TRUE is now
-	displayed as it is generated on console-based versions of R.
+    o	modified model.matrix.gnm() so it can be used when only the namespace 
+        of gnm is loaded.
 
-    o	plot.gnm() now includes option 'which' = 5 as in plot.lm() in
-   	R >= 2.2.0. Now has separate help page.
-
-    o	the 'constrain' argument to gnm() now accepts the names of parameters.
-
-    o	the 'formula' argument to gnm() now accepts '.' as described in
-	?terms.formula, ignoring eliminated factor if in 'data'.
-
-    o	interface for se() extended - can now use to find standard errors for
-	all parameters or (a selection of) individual parameters in a gnm model.
-
-    o	made it possible to use gnm() with alternative fitting function.
-
-    o	".Environment" attribute now attached to "gnm" objects so that gnm package
-	loaded when workspace containing "gnm" objects is loaded.
-
-
-Changes in Behaviour
---------------------
-
-    o	start-up iterations now only update column of design matrix required in
-	next iteration. Therefore plug-in functions using the default start-up
-	procedure for nonlinear parameters need a localDesignFunction() with the
-	argument 'ind' specifying the column that should be returned.
-
-    o	modified output given by gnm() when 'trace' = TRUE: now prints initial
-	deviance and the deviance at the end of each iteration.
-
-    o	modified updates of linear parameters in starting procedure: now offset
-	contribution of fully specified terms only.
-
-    o	results of summary.gnm(), vcov.gnm() and coef.gnm() now include any
-	eliminated parameters. Print methods have been added for vcov.gnm and
-	coef.gnm objects so that any eliminated parameters are not shown.
-
-    o	Mult() terms are no longer split into components by anova.gnm(),
-  	termPredictors.gnm(), labels.gnm() or the "assign" attribute of the
-	model matrix - consistent with terms() output.
-
-    o	the 'eliminate' argument to gnm() must now be an expression that
-	evaluates to a factor - this reverts the extension of 0.7-2.
-
-    o	when using gnm() with 'constrain' = "pick", the name(s) of the chosen
-	parameter(s) will replace "pick" in the reurned model call.
-
-    o	getContrasts() now uses first level of a factor as the reference level
-	(by default).
-
-    o	gnmControl() replaced by arguments to gnm().
-
-    o	gnm() now uses glm.fit() for linear models (with control parameters at
-	the gnm() defaults).unless 'eliminate'is non-NULL.
-
-    o	vcov.gnm() and summary.gnm() now return variance-covariance matrices
-	including any aliased parameters. v
-
-    o	summary.gnm() now returns standard errors with test statistics etc,
-	where estimated parameters are identified.
 \end{verbatimtab}
 
 \newpage

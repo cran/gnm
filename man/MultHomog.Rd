@@ -47,6 +47,9 @@ MultHomog(...)
   Goodman, L. A. (1979) Simple Models for the Analysis of Association in
   Cross-Classifications having Ordered
   Categories. \emph{J. Am. Stat. Assoc.}, \bold{74(367)}, 537-552. }
+\note{Currently, \code{MultHomog} can only be used to specify a
+  one-dimensional interaction. See examples for a workaround to specify
+  interactions with more than one dimension. }
 \author{ Heather Turner }
 \seealso{\code{\link{gnm}} and \code{\link{Nonlin}} for usage.
   
@@ -56,13 +59,19 @@ MultHomog(...)
   \code{gnm} formulae.}
 \examples{
 set.seed(1)
-data(occupationalStatus)
+data(friend)
 
 ##  Fit an association model with homogeneous row-column effects
-RChomog <- gnm(Freq ~ origin + destination + Diag(origin, destination) +
-               Nonlin(MultHomog(origin, destination)), family = poisson,
-               data = occupationalStatus)
-## Deviance is 32.56, 34 d.f.
+rc1 <- gnm(Freq ~ r + c + Diag(r,c) + Nonlin(MultHomog(r, c)),
+           family = poisson, data = friend)
+rc1
+
+##  Extend to two-component interaction (using workaround)
+original <- as.data.frame(friend)
+r2 <- original$r
+c2 <- original$c
+rc2 <- update(rc1, . ~ . + Nonlin(MultHomog(r2, c2)))
+rc2
 }
 \keyword{ models }
 \keyword{ regression }

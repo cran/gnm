@@ -11,8 +11,11 @@
               trace = FALSE,
               verbose = FALSE,
               x = FALSE,
-              termPredictors = FALSE)
+              termPredictors = FALSE,
+              lsMethod = "qr")
 {
+    if (!(lsMethod %in% c("chol", "qr"))) stop(
+                "lsMethod must be chol or qr")
     eps <- 100*.Machine$double.eps
     attempt <- 1
     dev <- numeric(2)
@@ -41,10 +44,10 @@
                 X <- modelTools$localDesignFunction(thetaOffset,
                                                     factorList)
                 theta[unspecifiedLin] <- quick.glm.fit(X[, unspecifiedLin], y,
-                                                       weights = weights,
-                                                       offset = offsetSpecified,
-                                                       family = family,
-                                                       eliminate = eliminate)
+                                                    weights = weights,
+                                                    offset = offsetSpecified,
+                                                    family = family,
+                                                    eliminate = eliminate)
                 constrain[is.na(theta)] <- TRUE
                 theta <- naToZero(theta)
             }
@@ -69,7 +72,9 @@
                     w <- weights * ifelse(abs(dmu) < eps, 0, dmu * dmu/vmu)
                     Xi <- modelTools$localDesignFunction(theta,
                                                          factorList, i)
-                    score <- crossprod(ifelse(abs(y - mu) < eps, 0, (y - mu)/dmu),
+                    score <- crossprod(ifelse(abs(y - mu) < eps,
+                                              0,
+                                              (y - mu)/dmu),
                                        w * Xi)
                     gradient <- crossprod(w, Xi^2)
                     theta[i] <- as.vector(theta[i] + score/gradient)
@@ -121,6 +126,10 @@
         }
         if (status == "not.converged") {
             needToElim <- seq(sum(!constrain[seq(eliminate)])[eliminate > 0])
+            X <-  modelTools$localDesignFunction(theta, factorList)
+            X <- X[, !constrain, drop = FALSE]
+            pns <- rep(nrow(X), ncol(X))
+            ridge <- c(0, rep(1e-5, ncol(X)))
             for (iter in seq(iterMax)) {
                 if (verbose) {
                     if (iter == 1)
@@ -137,29 +146,38 @@
                     status <- "w.not.finite"
                     break
                 }
-                X <- modelTools$localDesignFunction(theta, factorList)
-                X <- X[, !constrain, drop = FALSE]
-                WX <- w * X
-                score <- drop(crossprod(z, WX))
-                diagInfo <- colSums(X * WX)
-                if (diagInfo < 1e-20 ||
-                    all(abs(score) < tolerance * sqrt(diagInfo))) {
+
+                wSqrt <- sqrt(w)
+                W.X <- wSqrt * X
+                w.z <- wSqrt * z
+                score <- drop(crossprod(w.z, W.X))
+                diagInfo <- colSums(W.X * W.X)
+                Xscales <- pmax(1e-3, sqrt(diagInfo)) ## to allow for zeros!
+                W.X.scaled <- W.X / rep(Xscales, pns)
+                if (all(diagInfo < 1e-20) ||
+                    all(abs(score) <
+                        tolerance * sqrt(tolerance + diagInfo))) {
                     status <- "converged"
                     break
                 }
-                if (iter > 1 && abs(diff(dev)) < 1e-16) {
-                    status <- "stuck"
-                    break
+                znorm <- sqrt(sum(w.z * w.z))
+                w.z <- w.z/znorm
+                if (lsMethod == "chol") {
+                    W.Z <- cbind(w.z, W.X.scaled)
+                    ZWZ <- crossprod(W.Z)
+                    theDiagonal <- diag(ZWZ)
+                    diag(ZWZ) <- theDiagonal + ridge
+                    ZWZinv <- cholInv(ZWZ, eliminate = 1 + needToElim,
+                                      onlyFirstCol = TRUE)
+                    theChange <- -(ZWZinv[, 1]/ZWZinv[1, 1])[-1] *
+                        znorm / Xscales
+                } else { ## lsMethod is "qr"
+                    XWX <- crossprod(W.X.scaled)
+                    theDiagonal <- diag(XWX)
+                    diag(XWX) <- theDiagonal + ridge[-1]
+                    theChange <- solve(qr(XWX), crossprod(W.X.scaled, w.z)) *
+                        znorm / Xscales
                 }
-                znorm <- sqrt(mean(z*z))
-                zscaled <- z/znorm
-                Z <- cbind(zscaled, X)
-                WZ <- w * Z
-                ZWZ <- crossprod(Z, WZ)
-                ZWZinv <- MPinv(ZWZ,
-                                eliminate = 1 + needToElim,
-                                onlyFirstCol = TRUE)
-                theChange <- -(ZWZinv[, 1]/ZWZinv[1, 1])[-1] * znorm
                 dev[2] <- dev[1]
                 j <- 1
                 while (dev[1] >= dev[2] && j < 11) {
@@ -187,6 +205,8 @@
                 else if (verbose)
                     prattle(".")
                 theta <- nextTheta
+                X <- modelTools$localDesignFunction(theta, factorList)
+                X <- X[, !constrain, drop = FALSE]
             }
         }
         if (status %in% c("converged", "not.converged")) {
@@ -199,11 +219,11 @@
                 message("\n"[!trace],
                         switch(status,
                                bad.param = "Bad parameterisation",
-                               eta.not.finite = "Predictors are not all finite",
+                               eta.not.finite =
+                                 "Predictors are not all finite",
                                w.not.finite =
-                               "Iterative weights are not all finite",
-                               no.deviance = "Deviance is NaN",
-                               stuck = "Iterations are not converging"))
+                                 "Iterative weights are not all finite",
+                               no.deviance = "Deviance is NaN"))
             attempt <- attempt + 1
             if (attempt > 5 || all(!is.na(start)) || modelTools$classID %in%
                                   c("Linear", "plugInStart"))
@@ -212,28 +232,36 @@
                 message("Restarting")
         }
     }
-    if (status == "not.converged")
-        warning("fitting algorithm has either not converged or converged\n",
-                "to a non-solution of the likelihood equations: re-start \n",
-                "gnm with coefficients of returned model\n")
     theta[constrain] <- NA
-    Info <- crossprod(X, WX)
-    VCOV <- MPinv(Info, eliminate = needToElim, onlyNonElim = FALSE)
+    Info <- crossprod(W.X)
+    VCOV <- MPinv(Info, eliminate = needToElim, onlyNonElim = FALSE,
+                  method = "svd")
     modelAIC <- suppressWarnings(family$aic(y, rep.int(1, nObs),
                                             mu, weights, dev[1])
                                  + 2 * attr(VCOV, "rank"))
     fit <- list(coefficients = theta, constrain = constrain, residuals = z,
                 fitted.values = mu, rank = attr(VCOV, "rank"), family = family,
                 predictors = eta, deviance = dev[1], aic = modelAIC,
-                iter = iter - 1, weights = w, prior.weights = weights,
-                df.residual = nObs - sum(weights == 0) - attr(VCOV,"rank"),
-                y = y, converged = status == "converged")
+                iter = iter - (iter != iterMax), weights = w,
+                prior.weights = weights,
+                df.residual = nObs - attr(VCOV,"rank"), # - sum(weights == 0),
+                y = y)
+    if (status == "not.converged") {
+        warning("Fitting algorithm has either not converged or converged\n",
+                "to a non-solution of the likelihood equations.\n",
+                "Use exitInfo() for numerical details of last iteration.\n")
+        fit$converged <- structure(FALSE, score = score, criterion =
+                                   tolerance * sqrt(tolerance + diagInfo))
+    }
+    else
+        fit$converged <- TRUE
+        
     if (x) {
         if (sum(constrain) > 0) {
             fit$x <- array(0, dim = c(nrow(X), length(theta)),
                            dimnames = list(NULL, names(theta)))
             fit$x[, !constrain] <- X
-            attr(fit$x, "assign") <- modelTools$termAssign   
+            attr(fit$x, "assign") <- modelTools$termAssign
         }
         else
             fit$x <- structure(X, assign = modelTools$termAssign)
