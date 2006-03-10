@@ -115,16 +115,13 @@ gnm <- function(formula, eliminate = NULL, constrain = NULL, family = gaussian,
           constrain <- rep.int(FALSE, nParam)
         else {
             if (identical(constrain, "pick")) {
-                if (!require(tcltk))
-                    stop("constrain = \"pick\", and tcltk not installed")
-                if (!require(relimp))
-                    stop("the relimp package from CRAN needs to be installed")
                 call$constrain <-
-                    pickFrom(coefNames[seq(coefNames) > nElim],
-                             setlabels = "Coefficients to constrain",
-                             title = "Constrain one or more gnm coefficients",
-                             items.label = "Model coefficients:",
-                             edit.setlabels = FALSE)
+                    relimp:::pickFrom(coefNames[seq(coefNames) > nElim],
+                                      setlabels = "Coefficients to constrain",
+                                      title = "Constrain one or more gnm",
+                                      "coefficients",
+                                      items.label = "Model coefficients:",
+                                      edit.setlabels = FALSE)
                 call$constrain <- unname(unlist(call$constrain))
                 if(!length(nchar(call$constrain))) {
                     warning("no parameters were specified to constrain")
