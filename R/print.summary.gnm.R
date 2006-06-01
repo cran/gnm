@@ -12,12 +12,15 @@ print.summary.gnm <- function (x, digits = max(3, getOption("digits") - 3),
     }
     print.default(x$deviance.resid, digits = digits, na = "", print.gap = 2)
 
-    coefs <- coef(x)
-    if (attr(x$cov.scaled, "eliminate"))
-        coefs <- coefs[-seq(attr(x$cov.scaled, "eliminate")), ]
+    tidy.zeros <- function(vec)
+        ifelse(abs(vec) < 100 * .Machine$double.eps, 0, vec)
+    coefs <- tidy.zeros(coef(x))
+    if (length(ofInterest(x)))
+        coefs <- coefs[ofInterest(x), , drop = FALSE]
     
     if (nrow(coefs)) {
-        cat("\nCoefficients:\n")
+        cat("\nCoefficients", " of interest"[!is.null(ofInterest(x))], ":\n",
+            sep = "")
         printCoefmat(coefs, digits = digits, signif.stars = signif.stars, 
             na.print = "NA", ...)
         if (any(!is.na(coefs[,2])))

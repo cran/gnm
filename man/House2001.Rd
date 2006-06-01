@@ -53,6 +53,8 @@ iterated singular value decomposition.  \emph{Computational Statistics
   and Data Analysis} \bold{50}, 21--39.
 }
 \examples{
+\dontrun{
+## This example takes some while to run 
 data(House2001)
 summary(House2001)
 ## Put the votes in a matrix, and discard members with too many NAs etc:
@@ -96,13 +98,12 @@ House2001model1 <- gnm(voteAdj ~ Mult(rollCall - 1, member - 1),
 ##
 ## Plot the members' positions as estimated in the model:
 ##
-memberParameters <- grep("member", names(coef(House2001model1)))
+memberParameters <- pickCoef(House2001model1, "member")
 plot(coef(House2001model1)[memberParameters], col = partyColors,
      xlab = "Alphabetical index (Abercrombie 1 to Young 301)",
      ylab = "Member's relative position, one-dimensional model")
 ## Can do the same thing with two dimensions, but gnm takes around 40
 ## slow iterations to converge (there are more than 600 parameters): 
-\dontrun{
 Start2 <- residSVD(baseModel, rollCall, member, d = 2)
 House2001model2 <- gnm(
               voteAdj ~ Mult(rollCall - 1, member - 1, multiplicity = 2),
@@ -112,8 +113,8 @@ House2001model2 <- gnm(
               start = Start2, lsMethod = "qr")
 ## Deviance is 1545.166, df = 5257
 ##
-memberParameters1 <- grep("Mult1.*member", names(coef(House2001model2)))
-memberParameters2 <- grep("Mult2.*member", names(coef(House2001model2)))
+memberParameters1 <- pickCoef(House2001model, "Mult1.*member")
+memberParameters2 <- pickCoef(House2001model, "Mult2.*member")
 plot(coef(House2001model2)[memberParameters1],
      coef(House2001model2)[memberParameters2],
      col = partyColors,

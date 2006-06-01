@@ -11,20 +11,22 @@ vcov.gnm <-  function(object, dispersion = NULL, ...){
         }
         else dispersion <- Inf
     }
+    coefNames <- names(coef(object))
     constrain <- object$constrain
     eliminate <- object$eliminate
-    needToElim <- seq(sum(!constrain[seq(eliminate)])[eliminate > 0])
-    X <- model.matrix(object)[, !constrain, drop = FALSE]
+    needToElim <- seq(length.out = eliminate)
+    isConstrained <- is.element(seq(coefNames), constrain)
+    X <- model.matrix(object)[, !isConstrained, drop = FALSE]
     Info <- crossprod(X, c(object$weights) * X)
-    if (sum(constrain) > 0) {
-        cov.unscaled <- array(0, dim = rep(length(constrain), 2),
-                              dimnames = rep(list(names(coef(object))), 2))
-        cov.unscaled[!constrain, !constrain] <-
+    if (length(constrain) > 0) {
+        cov.unscaled <- array(0, dim = rep(length(coefNames), 2),
+                              dimnames = rep(list(coefNames), 2))
+        cov.unscaled[!isConstrained, !isConstrained] <-
             MPinv(Info, eliminate = needToElim, onlyNonElim = FALSE)
     }
     else
         cov.unscaled <- MPinv(Info, eliminate = needToElim, onlyNonElim = FALSE)
     attr(cov.unscaled, "rank") <- NULL
     structure(dispersion * cov.unscaled, dispersion = dispersion,
-              eliminate = eliminate, class = "vcov.gnm")
+              ofInterest = ofInterest(object), class = "vcov.gnm")
 }

@@ -8,8 +8,10 @@ summary.gnm <- function (object, dispersion = NULL, correlation = FALSE,
         cov.scaled <- vcov(object)
         estimable <- checkEstimable(object, diag(length(coefs)), ...)
         estimable[is.na(estimable)] <- FALSE
-        tidy.zeros <- function(vec) ifelse(abs(vec) < 100 * .Machine$double.eps, 0, vec)
-        sterr <- sqrt(tidy.zeros(diag(cov.scaled)))
+        if (is.matrix(cov.scaled))
+            sterr <- sqrt(diag(cov.scaled))
+        else
+            sterr <- diag(cov.scaled)
         is.na(sterr[!estimable]) <- TRUE
         tvalue <- coefs/sterr
         dn <- c("Estimate", "Std. Error")
@@ -37,7 +39,7 @@ summary.gnm <- function (object, dispersion = NULL, correlation = FALSE,
         cov.scaled <- matrix(, 0, 0)
     }
     df.f <- nrow(coef.table)
-    ans <- c(object[c("call", "eliminate", "family", "deviance", "aic",
+    ans <- c(object[c("call", "ofInterest", "family", "deviance", "aic",
                       "df.residual", "iter")],
              list(deviance.resid = residuals(object, type = "deviance"),
                   coefficients = coef.table,

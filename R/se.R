@@ -1,46 +1,33 @@
-se <- function(model, estimate = "all", checkEstimability = TRUE, ...){
+se <- function(model, estimate = ofInterest(model),
+               checkEstimability = TRUE, ...){
     if (!inherits(model, "gnm")) stop("model is not of class \"gnm\"")
     coefs <- coef(model)
     l <- length(coefs)
     eliminate <- model$eliminate
-    if (eliminate && eliminate == l)
-        stop("No non-eliminated coefficients")
-    coefNames <- names(coefs)[(eliminate + 1):l]
-    if (identical(estimate, "all")) {
-        if (eliminate == 0)
-            return(data.frame(coef(summary(model)))[, 1:2])
-        return(data.frame(coef(summary(model)))[(eliminate + 1):l, 1:2])
-    }
-    else {
-        if (identical(estimate, "pick")) {
-            estimate <-
-                unlist(relimp:::pickFrom(coefNames,
-                                         setlabels = "Selected coefficients",
-                                         title =
-                                         paste("Estimate standard errors",
-                                         "for one or more gnm coefficients"),
-                                         items.label = "Model coefficients:",
-                                         edit.setlabels = FALSE))
-            if(!length(nchar(estimate)))
-                stop("no parameters were selected")
-        }
+    coefNames <- names(coefs)
+    if (identical(estimate, "[?]"))
+        estimate <- pickCoef(model, subset = (eliminate + 1):l,
+                             title = paste("Estimate standard errors",
+                             "for one or more gnm coefficients"))
+    if (is.null(estimate))
+        return(data.frame(coef(summary(model)))[, 1:2])
+    else { 
         if (is.character(estimate))
             estimate <- match(estimate, coefNames)
-        if (is.vector(estimate) && all(estimate %in% seq(l - eliminate))) {
+        if (is.vector(estimate) && all(estimate %in% seq(coefNames))) {
             if (!length(estimate))
                 stop("no coefficients specified by 'estimate' argument")
-            estimate <- estimate + eliminate
             comb <- naToZero(coefs[estimate])
             var <- vcov(model)[estimate, estimate]
             coefMatrix <- matrix(0, l, length(comb))
-            coefMatrix[cbind(estimate, seq(comb))] <- 1
+            coefMatrix[cbind(estimate, seq(length(comb)))] <- 1
             colnames(coefMatrix) <- names(comb)
         }
         else {
             coefMatrix <- as.matrix(estimate)
             if (!is.numeric(coefMatrix))
-                stop("'estimate' must specify parameters using ",
-                     "\"all\", \"pick\", or a vector of \n names/indices; ",
+                stop("'estimate' should specify parameters using ",
+                     "\"pick\" or a vector of \n names/indices; ",
                      "or specify linear combinations using ",
                      "a numeric vector/matrix.")
             if (eliminate && nrow(coefMatrix) == l - eliminate)
@@ -59,7 +46,10 @@ se <- function(model, estimate = "all", checkEstimability = TRUE, ...){
         if (any(!na.omit(estimable)))
             cat("Std. Error is NA where estimate is fixed or unidentified\n")
     }
-    sterr <- sqrt(diag(var))
+    if (is.matrix(var))
+        sterr <- sqrt(diag(var))
+    else
+        sterr <- sqrt(var)
     is.na(sterr[estimable %in% c(FALSE, NA)]) <- TRUE
     result <- data.frame(comb, sterr)
     rowNames <- colnames(coefMatrix)

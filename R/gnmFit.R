@@ -1,5 +1,8 @@
 "gnmFit" <-
-    function (modelTools, y, constrain = FALSE, eliminate = 0,
+    function (modelTools, y,
+              constrain = numeric(0),
+              constrainTo = numeric(length(constrain)),
+              eliminate = 0,
               family = poisson(),
               weights = rep.int(1, length(y)),
               offset = rep.int(0, length(y)),
@@ -21,6 +24,7 @@
     dev <- numeric(2)
     if (verbose)
         width <- as.numeric(options("width"))
+    isConstrained <- is.element(seq(start), constrain)
     repeat {
         status <- "not.converged"
         if (any(is.na(start))) {
@@ -28,11 +32,11 @@
                 prattle("Initialising", "\n", sep = "")
             theta <- modelTools$start()
             theta[!is.na(start)] <- start[!is.na(start)]
-            theta[constrain] <- 0
+            theta[constrain] <- constrainTo
             modelTools$classID[is.na(theta)] <- "Linear"
             linear <- modelTools$classID == "Linear"
             specified <- !is.na(start) | modelTools$classID ==
-                "plugInStart" | constrain
+                "plugInStart" | isConstrained
             unspecifiedLin <- seq(theta)[linear & !specified]
             if (any(unspecifiedLin)) {
                 thetaOffset <- theta
@@ -48,7 +52,13 @@
                                                     offset = offsetSpecified,
                                                     family = family,
                                                     eliminate = eliminate)
-                constrain[is.na(theta)] <- TRUE
+                if (sum(is.na(theta)) > length(constrain)) {
+                    extra <- setdiff(which(is.na(theta)), constrain)
+                    isConstrained[extra] <- TRUE
+                    ind <- order(c(constrain, extra))
+                    constrain <- c(constrain, extra)[ind]
+                    constrainTo <- c(constrainTo, numeric(length(extra)))[ind]
+                }
                 theta <- naToZero(theta)
             }
             factorList <- modelTools$factorList(theta)
@@ -88,7 +98,7 @@
                 }
                 if (status == "not.converged" && any(linear)) {
                     if (iter == 1) {
-                        which <- seq(theta)[linear & !constrain]
+                        which <- seq(theta)[linear & !isConstrained]
                         if(!exists("X"))
                             X <- modelTools$localDesignFunction(theta,
                                                                 factorList)
@@ -111,13 +121,13 @@
             }
         }
         else {
-            theta <- structure(ifelse(!constrain, start, 0),
-                                names = names(modelTools$classID))
+            theta <- structure(replace(start, constrain, constrainTo),
+                               names = names(modelTools$classID))
             factorList <- modelTools$factorList(theta)
             eta <- offset + modelTools$predictor(factorList)
             if (any(!is.finite(eta))) {
-                status <- "eta.not.finite"
-                break
+                stop("Values of 'start' and 'constrain' produce non-finite ",
+                     "predictor values")
             }
             mu <- family$linkinv(eta)
             dev[1] <- sum(family$dev.resids(y, mu, weights))
@@ -125,12 +135,16 @@
                 prattle("Initial Deviance = ", dev, "\n", sep = "")
         }
         if (status == "not.converged") {
-            needToElim <- seq(sum(!constrain[seq(eliminate)])[eliminate > 0])
+            needToElim <- seq(length.out = eliminate)
             X <-  modelTools$localDesignFunction(theta, factorList)
-            X <- X[, !constrain, drop = FALSE]
+            X <- X[, !isConstrained, drop = FALSE]
             pns <- rep(nrow(X), ncol(X))
             ridge <- c(0, rep(1e-5, ncol(X)))
             for (iter in seq(iterMax)) {
+                if (any(!is.finite(X))){
+                    status <- "X.not.finite"
+                    break
+                }
                 if (verbose) {
                     if (iter == 1)
                         prattle("Running main iterations", "\n"[trace],
@@ -181,8 +195,8 @@
                 dev[2] <- dev[1]
                 j <- 1
                 while (dev[1] >= dev[2] && j < 11) {
-                    nextTheta <- replace(theta, !constrain,
-                                         theta[!constrain] + theChange)
+                    nextTheta <- replace(theta, !isConstrained,
+                                         theta[!isConstrained] + theChange)
                     factorList <- modelTools$factorList(nextTheta)
                     eta <- offset + modelTools$predictor(factorList)
                     if (any(!is.finite(eta))) {
@@ -206,7 +220,7 @@
                     prattle(".")
                 theta <- nextTheta
                 X <- modelTools$localDesignFunction(theta, factorList)
-                X <- X[, !constrain, drop = FALSE]
+                X <- X[, !isConstrained, drop = FALSE]
             }
         }
         if (status %in% c("converged", "not.converged")) {
@@ -223,6 +237,8 @@
                                  "Predictors are not all finite",
                                w.not.finite =
                                  "Iterative weights are not all finite",
+                               X.not.finite =
+                                 "Local design matrix has infinite elements",
                                no.deviance = "Deviance is NaN"))
             attempt <- attempt + 1
             if (attempt > 5 || all(!is.na(start)) || modelTools$classID %in%
@@ -239,9 +255,10 @@
     modelAIC <- suppressWarnings(family$aic(y, rep.int(1, nObs),
                                             mu, weights, dev[1])
                                  + 2 * attr(VCOV, "rank"))
-    fit <- list(coefficients = theta, constrain = constrain, residuals = z,
-                fitted.values = mu, rank = attr(VCOV, "rank"), family = family,
-                predictors = eta, deviance = dev[1], aic = modelAIC,
+    fit <- list(coefficients = theta, constrain = constrain,
+                constrainTo = constrainTo, residuals = z, fitted.values = mu,
+                rank = attr(VCOV, "rank"), family = family, predictors = eta,
+                deviance = dev[1], aic = modelAIC,
                 iter = iter - (iter != iterMax), weights = w,
                 prior.weights = weights,
                 df.residual = nObs - attr(VCOV,"rank"), # - sum(weights == 0),
@@ -255,12 +272,12 @@
     }
     else
         fit$converged <- TRUE
-        
+
     if (x) {
-        if (sum(constrain) > 0) {
+        if (length(constrain) > 0) {
             fit$x <- array(0, dim = c(nrow(X), length(theta)),
                            dimnames = list(NULL, names(theta)))
-            fit$x[, !constrain] <- X
+            fit$x[, !isConstrained] <- X
             attr(fit$x, "assign") <- modelTools$termAssign
         }
         else

@@ -6,23 +6,36 @@ anova.gnm <- function (object, ..., dispersion = NULL, test = NULL)
     else (names(dotargs) != "")
     if (any(named)) 
         warning("the following arguments to 'anova.gnm' are invalid and dropped: ", 
-            paste(deparse(dotargs[named]), collapse = ", "))
+                paste(deparse(dotargs[named]), collapse = ", "))
     dotargs <- dotargs[!named]
     is.gnm <- unlist(lapply(dotargs, function(x) inherits(x, c("gnm", "glm"))))
     dotargs <- dotargs[is.gnm]
     if (length(dotargs) > 0) 
         return(anova.glmlist(c(list(object), dotargs), dispersion = dispersion, 
-            test = test))
-    varlist <- labels(object)
+                             test = test))
+    
     x <- model.matrix(object)
-    varlin <- length(attr(gnmTerms(object, NULL), "parsedLabels")[[1]]) -
-        !attr(object$terms, "intercept")
-    varseq <- attr(x, "assign") - (object$eliminate > 0)
+    if (object$eliminate) {
+        varlist <- labels(object)[-1]
+        varseq <- attr(x, "assign") - 1
+    }
+    else {
+        varlist <- labels(object)
+        varseq <- attr(x, "assign")
+    }    
     nvars <- max(0, varseq)
+
+    nonlinear <- match(TRUE, !sapply(attr(gnmTerms(object), "parsedLabels"),
+                                     inherits, "Linear"))
+    if (is.na(nonlinear))
+        nonlinear <- nvars + 1
+    
     resdev <- resdf <- fit <- NULL
+    origConstrain <- object$constrain
+    origConstrainTo <- object$constrainTo
     if (nvars > 0) {
         for (i in seq(nvars)) {
-            if (i <= varlin){
+            if (i < nonlinear){
                 fit <- glm.fit(x = x[, varseq < i, drop = FALSE], 
                                y = c(object$y), offset = c(object$offset), 
                                start = object$start,
@@ -30,9 +43,10 @@ anova.gnm <- function (object, ..., dispersion = NULL, test = NULL)
                                family = object$family)
             }
             else {
-                constrain <- replace(object$constrain, varseq >= i, TRUE)
-                fit <- update(object, constrain = constrain,
-                              #start = object$coef,
+                fit <- update(object, constrain = c(origConstrain,
+                                      seq(varseq)[varseq >= i]),
+                              constrainTo = c(origConstrainTo,
+                                      rep(0, sum(varseq >= i))),
                               verbose = FALSE)
             }
             resdev <- c(resdev, fit$deviance)

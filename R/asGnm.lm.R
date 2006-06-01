@@ -3,10 +3,12 @@ asGnm.lm <- function(object, ...) {
     modelData <- model.frame(object)
     object[lmExtra] <- NULL
     object$call[[1]] <- as.name("gnm")
+    constrain <- which(is.na(coef(object)))
     object <- c(list(formula = formula(object), eliminate = 0,
-                     na.action = na.action(modelData),
-                     constrain = is.na(coef(object)), family = gaussian(),
-                     predictors = fitted.values(object),
+                     ofInterest = NULL, na.action = na.action(modelData),
+                     constrain = constrain,
+                     constrainTo = numeric(length(constrain)),
+                     family = gaussian(), predictors = fitted.values(object),
                      deviance = deviance(object),
                      y = model.response(modelData)), object)
     object$weights <- object$prior.weights <- rep.int(1, length(object$y))

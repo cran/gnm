@@ -46,15 +46,20 @@ oneDimensional <- update(noRelationship,
                          ~ . + Mult(pain - 1, x1 + x2 + x3 - 1))
 
 ## multinomial logistic
-threeDimensional <- update(noRelationship, ~ . + pain:(x1 + x2 + x3))
+%threeDimensional <- update(noRelationship, ~ . + pain:(x1 + x2 + x3))
+threeDimensional <- glm(count ~ id + pain + pain:(x1 + x2 + x3),
+                        family = "poisson", data = backPainLong)
 
 ### Models to determine distinguishability in stereotype model
 ## constrain scale of category-specific multipliers
 oneDimensional <- update(noRelationship,
                          ~ . + Mult(pain - 1, offset(x1) + x2 + x3 - 1))
 ## obtain identifiable contrasts & id possibly indistinguishable slopes
-getContrasts(oneDimensional, 6:11)
+getContrasts(oneDimensional, pickCoef(oneDimensional, "Mult.*pain"))
 
+\dontrun{
+## (this part not needed for package testing)
+## fit simpler models and compare 
 .pain <- backPainLong$pain
 
 levels(.pain)[2:3] <- paste(levels(.pain)[2:3], collapse = " | ")
@@ -85,5 +90,6 @@ logLikMultinom <- function(model){
 models <- c("threeDimensional", "oneDimensional", "noRelationship",
             "fiveGroups", "fourGroups", "threeGroups", "sixCategories")
 t(sapply(models, logLikMultinom))
+}
 }
 \keyword{datasets}
