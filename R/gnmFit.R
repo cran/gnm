@@ -15,7 +15,8 @@
               verbose = FALSE,
               x = FALSE,
               termPredictors = FALSE,
-              lsMethod = "qr")
+              lsMethod = "qr",
+              ridge = 1e-8)
 {
     if (!(lsMethod %in% c("chol", "qr"))) stop(
                 "lsMethod must be chol or qr")
@@ -25,6 +26,7 @@
     if (verbose)
         width <- as.numeric(options("width"))
     isConstrained <- is.element(seq(start), constrain)
+    XWX <- NULL
     repeat {
         status <- "not.converged"
         if (any(is.na(start))) {
@@ -79,12 +81,10 @@
                 for (i in rep(seq(theta)[oneAtATime], 2)) {
                     dmu <- family$mu.eta(eta)
                     vmu <- family$variance(mu)
-                    w <- weights * ifelse(abs(dmu) < eps, 0, dmu * dmu/vmu)
+                    w <- weights * (abs(dmu) >= eps) * dmu * dmu/vmu
                     Xi <- modelTools$localDesignFunction(theta,
                                                          factorList, i)
-                    score <- crossprod(ifelse(abs(y - mu) < eps,
-                                              0,
-                                              (y - mu)/dmu),
+                    score <- crossprod((abs(y - mu) >= eps) * (y - mu)/dmu,
                                        w * Xi)
                     gradient <- crossprod(w, Xi^2)
                     theta[i] <- as.vector(theta[i] + score/gradient)
@@ -139,7 +139,7 @@
             X <-  modelTools$localDesignFunction(theta, factorList)
             X <- X[, !isConstrained, drop = FALSE]
             pns <- rep(nrow(X), ncol(X))
-            ridge <- c(0, rep(1e-5, ncol(X)))
+            ridge <- c(0, rep(ridge, ncol(X)))
             for (iter in seq(iterMax)) {
                 if (any(!is.finite(X))){
                     status <- "X.not.finite"
@@ -153,9 +153,9 @@
                         cat("\n")
                 }
                 dmu <- family$mu.eta(eta)
-                z <- ifelse(abs(dmu) < eps, 0, (y - mu)/dmu)
+                z <- (abs(dmu) >= eps) * (y - mu)/dmu
                 vmu <- family$variance(mu)
-                w <- weights * ifelse(abs(dmu) < eps, 0, dmu * dmu/vmu)
+                w <- weights * (abs(dmu) >= eps) * dmu * dmu/vmu
                 if (any(!is.finite(w))) {
                     status <- "w.not.finite"
                     break
@@ -166,7 +166,7 @@
                 w.z <- wSqrt * z
                 score <- drop(crossprod(w.z, W.X))
                 diagInfo <- colSums(W.X * W.X)
-                Xscales <- pmax(1e-3, sqrt(diagInfo)) ## to allow for zeros!
+                Xscales <- pmax(1e-3, sqrt(diagInfo)) ## to allow for zeros
                 W.X.scaled <- W.X / rep(Xscales, pns)
                 if (all(diagInfo < 1e-20) ||
                     all(abs(score) <
@@ -178,18 +178,28 @@
                 w.z <- w.z/znorm
                 if (lsMethod == "chol") {
                     W.Z <- cbind(w.z, W.X.scaled)
-                    ZWZ <- crossprod(W.Z)
-                    theDiagonal <- diag(ZWZ)
-                    diag(ZWZ) <- theDiagonal + ridge
-                    ZWZinv <- cholInv(ZWZ, eliminate = 1 + needToElim,
-                                      onlyFirstCol = TRUE)
-                    theChange <- -(ZWZinv[, 1]/ZWZinv[1, 1])[-1] *
-                        znorm / Xscales
+                    if (eliminate > 0){
+                        Tvec <- rep(1, eliminate) + ridge[1 + needToElim]
+                        Wmat <- W.Z[, -(1 + needToElim), drop = FALSE]
+                        Umat <- crossprod(W.Z[, 1 + needToElim, drop = FALSE],
+                                          Wmat)
+                        Wmat <- crossprod(Wmat)
+                        diag(Wmat) <- diag(Wmat) + ridge[-(1 + needToElim)]
+                        ZWZinv <- cholInv1(Wmat, Tvec, Umat, 1 + needToElim)
+                    } else {
+                        ZWZ <- crossprod(W.Z)
+                        theDiagonal <- diag(ZWZ)
+                        diag(ZWZ) <- theDiagonal + ridge
+                        ZWZinv <- cholInv1(ZWZ)
+                    }
+                    theChange <- -ZWZinv[-1]/ZWZinv[1] * znorm / Xscales
                 } else { ## lsMethod is "qr"
                     XWX <- crossprod(W.X.scaled)
                     theDiagonal <- diag(XWX)
-                    diag(XWX) <- theDiagonal + ridge[-1]
-                    theChange <- solve(qr(XWX), crossprod(W.X.scaled, w.z)) *
+                    XWXridge <- XWX
+                    diag(XWXridge) <- theDiagonal + ridge[-1]
+                    Qr <- qr(XWXridge, tol = 1e-20)
+                    theChange <- solve(Qr, crossprod(W.X.scaled, w.z)) *
                         znorm / Xscales
                 }
                 dev[2] <- dev[1]
@@ -249,19 +259,20 @@
         }
     }
     theta[constrain] <- NA
-    Info <- crossprod(W.X)
-    VCOV <- MPinv(Info, eliminate = needToElim, onlyNonElim = FALSE,
-                  method = "svd")
+    sv.tolerance <-  100 * .Machine$double.eps
+    if (is.null(XWX)) XWX <- crossprod(W.X.scaled)
+    Svd <- svd(XWX, nu = 0, nv = 0)
+    theRank <- sum(Svd$d > max(sv.tolerance * Svd$d[1], 0))
     modelAIC <- suppressWarnings(family$aic(y, rep.int(1, nObs),
                                             mu, weights, dev[1])
-                                 + 2 * attr(VCOV, "rank"))
+                                 + 2 * theRank)
     fit <- list(coefficients = theta, constrain = constrain,
                 constrainTo = constrainTo, residuals = z, fitted.values = mu,
-                rank = attr(VCOV, "rank"), family = family, predictors = eta,
+                rank = theRank, family = family, predictors = eta,
                 deviance = dev[1], aic = modelAIC,
                 iter = iter - (iter != iterMax), weights = w,
                 prior.weights = weights,
-                df.residual = nObs - attr(VCOV,"rank"), # - sum(weights == 0),
+                df.residual = nObs - theRank,
                 y = y)
     if (status == "not.converged") {
         warning("Fitting algorithm has either not converged or converged\n",

@@ -12,8 +12,8 @@ gnm(formula, eliminate = NULL, ofInterest = NULL, constrain = numeric(0),
     constrainTo = numeric(length(constrain)), family = gaussian, 
     data = NULL, subset, weights, na.action,  method = "gnmFit", offset,
     start = NULL, tolerance = 1e-6, iterStart = 2, iterMax = 500,
-    trace = FALSE, verbose = TRUE, model = TRUE, x = FALSE,
-    termPredictors = FALSE, lsMethod = "qr", ...)  
+    trace = FALSE, verbose = TRUE, model = TRUE, x = TRUE,
+    termPredictors = FALSE, lsMethod = "qr", ridge = 1e-8, ...)  
 }
 \arguments{
   \item{formula}{ a symbolic description of the nonlinear predictor. }
@@ -76,11 +76,13 @@ gnm(formula, eliminate = NULL, ofInterest = NULL, constrain = numeric(0),
     if the algorithm restarts. } 
   \item{model}{ logical: if \code{TRUE} the model frame is returned. }
   \item{x}{ logical: if \code{TRUE} the local design matrix from the last
-    iteration is returned. }
+    iteration is included as a component of returned model object. }
   \item{termPredictors}{ logical: if \code{TRUE}, a matrix is returned
     with a column for each term in the model, containing the additive
     contribution of that term to the predictor. }
   \item{lsMethod}{ character: must be one of "chol" or "qr".}
+  \item{ridge}{numeric, a positive value for the ridge constant to be
+    used in the fitting algorithm}
   \item{\dots}{ further arguments passed to fitting function. }
 }
 \details{
@@ -159,7 +161,10 @@ gnm(formula, eliminate = NULL, ofInterest = NULL, constrain = numeric(0),
   direct solution using a QR decomposition (\code{"qr"}), and matrix
   inversion via Cholesky decomposition (\code{"chol"}).  In both cases,
   the design matrix is standardized and regularized (in the
-  Levenberg-Marquardt sense) prior to solving.  If \code{lsMethod} is
+  Levenberg-Marquardt sense) prior to solving; the \code{ridge} argument
+  provides a degree of control over the regularization performed
+  (smaller values may sometimes give faster convergence but can lead
+  to numerical instability).  If \code{lsMethod} is
   left unspecified, the default is \code{"qr"}, unless \code{eliminate}
   is used in which case the default \code{lsMethod} used is \code{"chol"}. 
 
@@ -327,7 +332,6 @@ coef(doubleUnidiff)[coefs.of.interest]
 
 ##  Re-parameterize by setting Mult2.Factor1.election1 to zero
 getContrasts(doubleUnidiff, coefs.of.interest)
-## [[1]]
 ##                          estimate        SE    quasiSE    quasiVar
 ## Mult2.Factor1.election1 0.0000000 0.0000000 0.22854380 0.052232270
 ## Mult2.Factor1.election2 0.6817370 0.2401642 0.07395880 0.005469905
@@ -336,7 +340,6 @@ getContrasts(doubleUnidiff, coefs.of.interest)
 
 ##  Same thing but with election 4 as reference category:
 getContrasts(doubleUnidiff, rev(coefs.of.interest))
-## [[1]]
 ##                            estimate        SE    quasiSE    quasiVar
 ## Mult2.Factor1.election4  0.00000000 0.0000000 0.10934823 0.011957035
 ## Mult2.Factor1.election3  0.08754785 0.1446834 0.09475932 0.008979329
