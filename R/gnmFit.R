@@ -29,17 +29,26 @@
     XWX <- NULL
     repeat {
         status <- "not.converged"
+        unspecifiedNonlin <- FALSE
         if (any(is.na(start))) {
             if (verbose == TRUE)
                 prattle("Initialising", "\n", sep = "")
             theta <- modelTools$start
             theta[!is.na(start)] <- start[!is.na(start)]
             theta[constrain] <- constrainTo
-            linear <- modelTools$classID == "Linear" 
-            unspecifiedLin <- is.na(theta) & linear
-            unspecifiedNonlin <- is.na(theta) & !linear
-            theta[unspecifiedNonlin] <- gnmStart(sum(unspecifiedNonlin))
+            unspecified <- is.na(theta)
+            theta[unspecified] <-  rnorm(sum(unspecified))
+            varPredictors <- modelTools$varPredictors(theta)
+            X0 <- modelTools$localDesignFunction(theta, varPredictors)
+            attr(X0, "tag") <- "reference"
+            theta[unspecified] <-  gnmStart(sum(unspecified))
+            varPredictors <- modelTools$varPredictors(theta)
+            X <- modelTools$localDesignFunction(theta, varPredictors)
+            asLinear <- colSums(X - X0) == 0
+            unspecifiedLin <- unspecified & asLinear
+            unspecifiedNonlin <- unspecified & !asLinear
             if (any(unspecifiedLin)) {
+                theta[unspecifiedLin] <- NA
                 varPredictors <- modelTools$varPredictors(theta)
                 varPredictors <- lapply(varPredictors, naToZero)
                 offsetSpecified <- offset + modelTools$predictor(varPredictors)
@@ -90,9 +99,9 @@
                     eta <- offset + modelTools$predictor(varPredictors)
                     mu <- family$linkinv(eta)
                 }
-                if (status == "not.converged" && any(linear)) {
+                if (status == "not.converged" && any(asLinear)) {
                     if (iter == 1) {
-                        which <- seq(theta)[linear & !isConstrained]
+                        which <- seq(theta)[asLinear & !isConstrained]
                         if(!exists("X"))
                             X <- modelTools$localDesignFunction(theta,
                                                                 varPredictors)
@@ -133,7 +142,8 @@
             X <-  modelTools$localDesignFunction(theta, varPredictors)
             X <- X[, !isConstrained, drop = FALSE]
             pns <- rep.int(nrow(X), ncol(X))
-            ridge <- c(0, rep.int(ridge, ncol(X)))
+            if (length(ridge) != ncol(X) + 1)
+                ridge <- c(0, rep.int(ridge, ncol(X)))
             for (iter in seq(iterMax)) {
                 if (any(!is.finite(X))){
                     status <- "X.not.finite"
@@ -246,7 +256,7 @@
                                  "Local design matrix has infinite elements",
                                no.deviance = "Deviance is NaN"))
             attempt <- attempt + 1
-            if (attempt > 5 || any(unspecifiedNonlin))
+            if (attempt > 5 || !any(unspecifiedNonlin))
                 return()
             else if (verbose)
                 message("Restarting")
