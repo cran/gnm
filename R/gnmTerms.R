@@ -2,15 +2,18 @@ gnmTerms <- function(formula, eliminate = NULL, data = NULL)
 {
     if (!is.null(substitute(e, list(e = eliminate)))) {
         tmp <- .Internal(update.formula(formula,
-                                        substitute(~ -1 + e + .,
+                                        substitute(~ e + .,
                                                    list(e = eliminate))))
-        environment(tmp) <- environment(formula)
         data <- data[!names(data) %in% deparse(eliminate)]
-        formula <- formula(terms.formula(tmp, simplify = TRUE,
-                                         keep.order = TRUE, data = data))
+        fullTerms <- terms.formula(tmp, specials = c("Const", "instances"),
+                                   simplify = TRUE, keep.order = TRUE,
+                                   data = data)
+        attr(fullTerms, "intercept") <- 0
     }
-    fullTerms <- terms(formula, specials = c("Const", "instances"),
-                       simplify = TRUE, keep.order = TRUE, data = data)
+    else {
+        fullTerms <- terms(formula, specials = c("Const", "instances"),
+                           simplify = TRUE, keep.order = TRUE, data = data)
+    }
 
     if (is.empty.model(fullTerms))
         return(fullTerms)
@@ -35,8 +38,6 @@ gnmTerms <- function(formula, eliminate = NULL, data = NULL)
         length(x) > 1 && inherits(match.fun(x[[1]]), "nonlin")
     }))
     if (!length(specials)) {
-        if (is.null(eliminate))
-            return(fullTerms)
         n <- length(termLabels)
         attributes(fullTerms) <-
             c(attributes(fullTerms),
@@ -44,8 +45,8 @@ gnmTerms <- function(formula, eliminate = NULL, data = NULL)
                    common = logical(n),
                    block = numeric(n),
                    match = !logical(n),
-                   assign = rep(1, n),
-                   classID = rep.int("Linear", n),
+                   assign = seq(length = n),
+                   type = rep.int("Linear", n),
                    NonlinID = character(n),
                    prefixLabels = character(n),
                    varLabels = termLabels,
@@ -141,7 +142,7 @@ gnmTerms <- function(formula, eliminate = NULL, data = NULL)
         blockList[[j]] <- tmp$block + adj
         match[[j]] <- as.logical(tmp$matchID)
         common[[j]] <- tmp$common %in% tmp$common[duplicated(tmp$common)]
-        class[[j]] <- tmp$classID
+        class[[j]] <- tmp$type
         NonlinID[[j]] <- tmp$NonlinID
         start[j] <- list(tmp$start)
         adj <- max(c(0, blockList[[j]])) + 1
@@ -169,7 +170,7 @@ gnmTerms <- function(formula, eliminate = NULL, data = NULL)
                block = unlist(blockList),
                match = unlist(match),
                assign = rep(seq(class), sapply(class, length)),
-               classID = unlist(class),
+               type = unlist(class),
                NonlinID = unlist(NonlinID),
                prefixLabels = unlist(prefixLabels),
                varLabels = unlist(varLabels),

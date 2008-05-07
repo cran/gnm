@@ -2,24 +2,19 @@ gnm <- function(formula, eliminate = NULL, ofInterest = NULL,
                 constrain = numeric(0),
                 constrainTo = numeric(length(constrain)), family = gaussian,
                 data = NULL, subset, weights, na.action,  method = "gnmFit",
-                offset, start = NULL, tolerance = 1e-6, iterStart = 2,
-                iterMax = 500, trace = FALSE, verbose = TRUE, model = TRUE,
-                x = TRUE, termPredictors = FALSE, lsMethod = "qr",
+                checkLinear = TRUE, offset, start = NULL, tolerance = 1e-6,
+                iterStart = 2, iterMax = 500, trace = FALSE, verbose = TRUE,
+                model = TRUE, x = TRUE, termPredictors = FALSE, lsMethod = "qr",
                 ridge = 1e-8, ...) {
 
     call <- match.call()
 
     modelTerms <- gnmTerms(formula, substitute(eliminate), data)
     modelData <- as.list(match.call(expand.dots = FALSE))
+    if (inherits(data, "table") && missing(na.action))
+        modelData$na.action <- "na.exclude"
     argPos <- match(c("data", "subset", "na.action", "weights", "offset"),
                     names(modelData), 0)
-    if (inherits(data, "table") && !is.empty.model(modelTerms)) {
-        xFactors <- as.call(c(as.name("model.frame"),
-                           formula = Freq ~ .,
-                           modelData[argPos[1:3]],
-                           drop.unused.levels = TRUE))
-        xFactors <- eval(xFactors, parent.frame())[, -1]
-    }
     modelData <- as.call(c(as.name("model.frame"),
                            formula = modelTerms,
                            modelData[argPos],
@@ -103,14 +98,15 @@ gnm <- function(formula, eliminate = NULL, ofInterest = NULL,
                                      matrix(, nrow(modelData), 0))
     }
     else {
-        onlyLin <- nElim == 0 && all(attr(modelTerms, "classID") == "Linear")
+        onlyLin <- {checkLinear && nElim == 0 &&
+                    all(attr(modelTerms, "type") == "Linear")}
         if (onlyLin) {
             X <- model.matrix(modelTerms, modelData)
             coefNames <- colnames(X)
         }
         else {
             modelTools <- gnmTools(modelTerms, modelData,
-                                   method == "model.matrix" | x, termPredictors)
+                                   method == "model.matrix" | x)
             coefNames <- names(modelTools$start)
         }
         if (method == "coefNames") return(coefNames)
@@ -118,15 +114,15 @@ gnm <- function(formula, eliminate = NULL, ofInterest = NULL,
 
         if (identical(constrain, "[?]"))
             call$constrain <- constrain <-
-                relimp:::pickFrom(coefNames,
-                                  subset = (nElim + 1):nParam,
-                                  setlabels = "Coefficients to constrain",
-                                  title =
-                                  "Constrain one or more gnm coefficients",
-                                  items.label = "Model coefficients:",
-                                  warningTest =
-                                  "No parameters were specified to constrain",
-                                  return.indices = TRUE)
+                unlist(relimp:::pickFrom(coefNames,
+                                         subset = (nElim:nParam)[-1],
+                                         edit.setlabels = FALSE,
+                                         title =
+                                         "Constrain one or more gnm coefficients",
+                                         items.label = "Model coefficients:",
+                                         warningText =
+                                         "No parameters were specified to constrain",
+                                         return.indices = TRUE))
         if (is.character(constrain)) {
             if (length(constrain) == 1)
                 constrain <- grep(constrain, coefNames)
@@ -188,8 +184,18 @@ gnm <- function(formula, eliminate = NULL, ofInterest = NULL,
             fit$constrain <- constrain
             fit$constrainTo <- constrainTo
             if (x) fit$x <- X
-            fit <- fit[-c(4,5,7,12,17,20)]
-            names(fit)[6] <- "predictors"
+            if (is.null(fit$offset))
+                fit$offset <- rep.int(0, length(coef(fit)))
+            if (termPredictors) {
+                modelTools <- gnmTools(modelTerms, modelData)
+                varPredictors <- modelTools$varPredictors(naToZero(coef(fit)))
+                fit$termPredictors <- modelTools$predictor(varPredictors,
+                                                           term = TRUE)
+            }
+            extra <- match(c("effects",  "R", "qr", "null.deviance",
+                           "df.null", "boundary"), names(fit))
+            fit <- fit[-extra]
+            names(fit)[match("linear.predictors", names(fit))] <- "predictors"
         }
         else if (method != "gnmFit")
             fit <- do.call(method, list(modelTools, y, constrain, constrainTo,
@@ -208,7 +214,7 @@ gnm <- function(formula, eliminate = NULL, ofInterest = NULL,
     }
 
     if (is.null(ofInterest) && !missing(eliminate))
-        ofInterest <- (nElim + 1):length(coefNames)
+        ofInterest <- (nElim:nParam)[-1]
     if (identical(ofInterest, "[?]"))
         call$ofInterest <- ofInterest <-
             pickCoef(fit,
@@ -221,7 +227,7 @@ gnm <- function(formula, eliminate = NULL, ofInterest = NULL,
             ofInterest <- match(ofInterest, coefNames)
     }
     if (!is.null(ofInterest)) {
-        if (!any(ofInterest %in% seq(coefNames)))
+        if (any(ofInterest > length(coefNames)))
             stop("'ofInterest' does not specify a subset of the ",
                  "coefficients.")
         names(ofInterest) <- coefNames[ofInterest]
@@ -237,13 +243,20 @@ gnm <- function(formula, eliminate = NULL, ofInterest = NULL,
 
     asY <- c("predictors", "fitted.values", "residuals", "prior.weights",
              "weights", "y", "offset")
-    if (exists("xFactors", inherits = FALSE)) {
-        fit[asY] <- lapply(fit[asY], tapply, xFactors, sum)
-        if (!is.null(fit$na.action)) fit$na.action <- NULL
+    if (inherits(data, "table") &&
+        (is.null(fit$na.action) | inherits(fit$na.action, "exclude"))) {
+        attr <- attributes(data)
+        if (!missing(subset)) {
+            ind <- as.numeric(names(y))
+            lev <- do.call("expand.grid", attr$dimnames)[ind,]
+            attr$dimnames <- apply(lev, 2, unique)
+            attr$dim <- unname(sapply(attr$dimnames, length))
+        }
+        fit$table.attr <- attr
     }
-    else
-        fit[asY] <- lapply(fit[asY], structure, names = names(y))
-
+    fit[asY] <- lapply(fit[asY], structure, dim = NULL, names = names(y))
+    if (termPredictors)
+        rownames(fit$termPredictors) <- names(y)
     if (model)
         fit$model <- modelData
     class(fit) <- c("gnm", "glm", "lm")

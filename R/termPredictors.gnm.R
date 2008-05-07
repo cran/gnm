@@ -1,8 +1,11 @@
 termPredictors.gnm <- function(object, ...) {
     if (is.null(object$termPredictors)){
-        object <- update(object, formula = formula(object),
-                         termPredictors = TRUE, start = coef(object),
-                         verbose = FALSE, trace = FALSE)
+        modelData <- model.frame(object)
+        modelTools <- gnmTools(terms(object), modelData)
+        varPredictors <- modelTools$varPredictors(parameters(object))
+        termPredictors <- modelTools$predictor(varPredictors, term = TRUE)
+        rownames(termPredictors) <- rownames(modelData)
+        termPredictors
     }
-    object$termPredictors
+    else object$termPredictors
 }
