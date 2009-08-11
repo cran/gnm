@@ -14,7 +14,7 @@
 }
 \usage{
 expandCategorical(data, catvar, sep = ".", countvar = "count",
-                  idvar = "id", as.ordered = FALSE) 
+                  idvar = "id", as.ordered = FALSE, group = TRUE) 
 }
 \arguments{
   \item{data}{ a data frame. }
@@ -27,7 +27,9 @@ expandCategorical(data, catvar, sep = ".", countvar = "count",
   \item{idvar}{ (optional) a character string to be used for the name
     of the new factor identifying the original rows (cases). }
   \item{as.ordered}{ logical - whether the new interaction factor should
-    be of class \code{"ordered"}.} 
+    be of class \code{"ordered"}.}
+  \item{group}{logical: whether or not to group individuals with common values
+    over all covariates. } 
 }
 \details{
   Each row of the data frame is replicated \eqn{c} times, where \eqn{c}
@@ -67,7 +69,7 @@ bwt.mu <- multinom(low ~ ., data = bwt)
 ## Equivalent using gnm - include unestimable main effects in model so 
 ## that interactions with low0 automatically set to zero, else could use
 ## 'constrain' argument. 
-bwtLong <- expandCategorical(bwt, "low")
+bwtLong <- expandCategorical(bwt, "low", group = FALSE)
 bwt.po <- gnm(count ~  low*(.), eliminate = id, data = bwtLong, family =
               "poisson") 
 summary(bwt.po) # same deviance; df reflect extra id parameters
