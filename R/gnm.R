@@ -1,11 +1,11 @@
 gnm <- function(formula, eliminate = NULL, ofInterest = NULL,
-                constrain = numeric(0),
+                constrain = numeric(0), #index of non-eliminated parameters
                 constrainTo = numeric(length(constrain)), family = gaussian,
                 data = NULL, subset, weights, na.action,  method = "gnmFit",
                 checkLinear = TRUE, offset, start = NULL,
                 etastart = NULL, mustart = NULL, tolerance = 1e-6,
                 iterStart = 2, iterMax = 500, trace = FALSE, verbose = TRUE,
-                model = TRUE, x = TRUE, termPredictors = FALSE, lsMethod = "qr",
+                model = TRUE, x = TRUE, termPredictors = FALSE,
                 ridge = 1e-8, ...) {
 
     call <- match.call()
@@ -14,8 +14,8 @@ gnm <- function(formula, eliminate = NULL, ofInterest = NULL,
     modelData <- as.list(match.call(expand.dots = FALSE))
     if (inherits(data, "table") && missing(na.action))
         modelData$na.action <- "na.exclude"
-    argPos <- match(c("data", "subset", "weights", "na.action", "offset",
-                      "etastart", "mustart"),
+    argPos <- match(c("eliminate", "data", "subset", "weights", "na.action",
+                      "offset", "etastart", "mustart"),
                     names(modelData), 0)
     modelData <- as.call(c(as.name("model.frame"),
                            formula = modelTerms,
@@ -24,11 +24,16 @@ gnm <- function(formula, eliminate = NULL, ofInterest = NULL,
     modelData <- eval(modelData, parent.frame())
 
     if (!missing(eliminate)) {
-        Elim <- suppressWarnings(eval(substitute(eliminate), modelData))
-        if (!is.factor(Elim))
+        eliminate <- modelData$`(eliminate)`
+        if (!is.factor(eliminate))
             stop("'eliminate' must be a factor")
-        nElim <- nlevels(Elim)
-        if (missing(lsMethod)) lsMethod <- "chol"
+        xtf <- xtfrm(modelData$`(eliminate)`)
+        ord <- order(xtf)
+        if (ordTRUE <- !identical(ord, xtf)) {
+            modelData <- modelData[ord,]
+            eliminate <- modelData$`(eliminate)`
+        }
+        nElim <- nlevels(eliminate)
     }
     else nElim <- 0
 
@@ -41,19 +46,19 @@ gnm <- function(formula, eliminate = NULL, ofInterest = NULL,
         method <- "gnmFit"
     }
 
-    nObs <- nrow(modelData)
+    nobs <- nrow(modelData)
     y <- model.response(modelData, "numeric")
     if (is.null(y))
-        y <- rep(0, nObs)
+        y <- rep(0, nobs)
 
     weights <- as.vector(model.weights(modelData))
     if (!is.null(weights) && any(weights < 0))
         stop("negative weights are not allowed")
     if (is.null(weights))
-        weights <- rep.int(1, nObs)
+        weights <- rep.int(1, nobs)
     offset <- as.vector(model.offset(modelData))
     if (is.null(offset))
-        offset <- rep.int(0, nObs)
+        offset <- rep.int(0, nobs)
 
     mustart <- model.extract(modelData, "mustart")
     etastart <- model.extract(modelData, "etastart")
@@ -77,10 +82,10 @@ gnm <- function(formula, eliminate = NULL, ofInterest = NULL,
         }
     }
 
-    if (is.empty.model(modelTerms)) {
+    if (is.empty.model(modelTerms) && missing(eliminate)) {
         if (method == "coefNames") return(numeric(0))
         else if (method == "model.matrix")
-            return(matrix(, nrow(modelData), 0))
+            return(model.matrix(modelTerms, data = modelData))
         if (!family$valideta(offset))
             stop("invalid predictor values in empty model")
         mu <- family$linkinv(offset)
@@ -88,25 +93,30 @@ gnm <- function(formula, eliminate = NULL, ofInterest = NULL,
             stop("invalid fitted values in empty model")
         dmu <- family$mu.eta(offset)
         dev <- sum(family$dev.resids(y, mu, weights))
-        modelAIC <- suppressWarnings(family$aic(y, rep.int(1, nObs), mu,
+        modelAIC <- suppressWarnings(family$aic(y, rep.int(1, nobs), mu,
                                                 weights, dev))
         fit <- list(coefficients = numeric(0), constrain = numeric(0),
-                    constrainTo = numeric(0), eliminate = 0,
+                    constrainTo = numeric(0), eliminate = NULL,
                     predictors = offset, fitted.values = mu, deviance = dev,
                     aic = modelAIC, iter = 0,
                     weights = weights*dmu^2/family$variance(mu),
-                    residuals = (y - mu)/dmu, df.residual = nObs, rank = 0,
+                    residuals = (y - mu)/dmu, df.residual = nobs, rank = 0,
                     family = family, prior.weights = weights, y = y,
                     converged = NA)
-        if (x) fit <- c(fit, x = matrix(, nrow(modelData), 0))
+        if (x) fit <- c(fit, x = model.matrix(modelTerms, data = modelData))
         if (termPredictors) fit <- c(fit, termPredictors =
                                      matrix(, nrow(modelData), 0))
     }
     else {
-        onlyLin <- {checkLinear && nElim == 0 &&
-                    all(attr(modelTerms, "type") == "Linear")}
+        onlyLin <- checkLinear && all(attr(modelTerms, "type") == "Linear")
         if (onlyLin) {
-            X <- model.matrix(modelTerms, modelData)
+            if (nElim) {
+                X <- model.matrix(update(modelTerms, . ~ . + 1), modelData)
+                asgn <- attr(X, "assign")
+                X <- X[,-1, drop = FALSE]
+                attr(X, "assign") <- asgn[-1]
+            }
+            else X <- model.matrix(modelTerms, modelData)
             coefNames <- colnames(X)
         }
         else {
@@ -120,7 +130,6 @@ gnm <- function(formula, eliminate = NULL, ofInterest = NULL,
         if (identical(constrain, "[?]"))
             call$constrain <- constrain <-
                 unlist(relimp::pickFrom(coefNames,
-                                        subset = (nElim:nParam)[-1],
                                         edit.setlabels = FALSE,
                                         title =
                                         "Constrain one or more gnm coefficients",
@@ -130,23 +139,18 @@ gnm <- function(formula, eliminate = NULL, ofInterest = NULL,
                                         return.indices = TRUE))
         if (is.character(constrain)) {
             if (length(constrain) == 1)
-                constrain <- grep(constrain, coefNames)
+                constrain <- match(grep(constrain, coefNames), seq_len(nParam), 0)
             else
-                constrain <- match(constrain, coefNames)
+                constrain <- match(constrain, coefNames, 0)
         }
-        if (is.logical(constrain))
-            constrain <- which(constrain)
         ## dropped logical option
-        if (any(constrain < nElim))
-            stop("'constrain' specifies one or more parameters",
-                 "in the 'eliminate' term.")
-        if (!all(constrain %in% seq(coefNames)))
-            stop(" 'constrain' specifies non-existant parameters.")
+        if (!all(constrain %in% seq_len(nParam)))
+            stop(" cannot match 'constrain' to non-eliminated parameters. ")
 
         if (is.null(start))
-            start <- rep.int(NA, nParam)
-        else if (length(start) != nParam) {
-            if (!missing(eliminate) && length(start) == (nParam - nElim))
+            start <- rep.int(NA, nElim + nParam)
+        else if (length(start) != nElim + nParam) {
+            if (!missing(eliminate) && length(start) == nParam)
                 start <- c(rep.int(NA, nElim), start)
             else
                 stop("length(start) must either equal the no. of parameters\n",
@@ -154,10 +158,12 @@ gnm <- function(formula, eliminate = NULL, ofInterest = NULL,
         }
 
         if (onlyLin) {
-            offset <- offset + X[, constrain, drop = FALSE] %*% constrainTo
-            X[, constrain] <- 0
-            if (method == "model.matrix")
-            return(X)
+            if (length(constrain)) {
+                offset <- drop(offset +
+                               X[, constrain, drop = FALSE] %*% constrainTo)
+                X[, constrain] <- 0
+            }
+            if (method == "model.matrix") return(X)
         }
         else if (method == "model.matrix"){
             theta <- modelTools$start
@@ -172,22 +178,29 @@ gnm <- function(formula, eliminate = NULL, ofInterest = NULL,
 
         if (!is.numeric(tolerance) || tolerance <= 0)
             stop("value of 'tolerance' must be > 0")
-        if (!is.numeric(iterMax) || iterMax <= 0)
-            stop("maximum number of iterations must be > 0")
+        if (!is.numeric(iterMax) || iterMax < 0)
+            stop("maximum number of iterations must be >= 0")
 
         if (onlyLin) {
             if (any(is.na(start))) start <- NULL
-            if (verbose) cat("Linear predictor - using glm.fit\n")
-            fit <- glm.fit(X, y, family = family, weights = weights,
-                           offset = offset, start = start,
-                           control = glm.control(tolerance, iterMax, trace),
-                           intercept = attr(modelTerms, "intercept"))
+            fit <- glm.fit.e(X, y, weights = weights, start = start,
+                             etastart = etastart, mustart = mustart,
+                             offset = offset, family = family,
+                             control = glm.control(tolerance, iterMax, trace),
+                             intercept = attr(modelTerms, "intercept"),
+                             eliminate = eliminate)
             if (sum(is.na(coef(fit))) > length(constrain)) {
                 extra <- setdiff(which(is.na(coef(fit))), constrain)
                 ind <- order(c(constrain, extra))
                 constrain <- c(constrain, extra)[ind]
                 constrainTo <- c(constrainTo, numeric(length(extra)))[ind]
             }
+            if (!is.null(fit$null.deviance)) {
+                extra <- match(c("effects",  "R", "qr", "null.deviance",
+                                 "df.null", "boundary"), names(fit))
+                fit <- fit[-extra]
+            }
+            names(fit)[match("linear.predictors", names(fit))] <- "predictors"
             fit$constrain <- constrain
             fit$constrainTo <- constrainTo
             if (x) fit$x <- X
@@ -199,30 +212,40 @@ gnm <- function(formula, eliminate = NULL, ofInterest = NULL,
                 fit$termPredictors <- modelTools$predictor(varPredictors,
                                                            term = TRUE)
             }
-            extra <- match(c("effects",  "R", "qr", "null.deviance",
-                           "df.null", "boundary"), names(fit))
-            fit <- fit[-extra]
-            names(fit)[match("linear.predictors", names(fit))] <- "predictors"
         }
         else if (method != "gnmFit")
-            fit <- do.call(method, list(modelTools, y, constrain, constrainTo,
-                                        nElim, family, weights, offset, nObs,
-                                        start, tolerance, iterStart, iterMax,
-                                        trace, verbose, x, termPredictors, ...))
+            fit <- do.call(method, list(modelTools = modelTools, y = y,
+                                        constrain = constrain,
+                                        constrainTo = constrainTo,
+                                        eliminate = eliminate, family = family,
+                                        weights = weights, offset = offset,
+                                        nobs = nobs, start = start,
+                                        etastart = etastart, mustart = mustart,
+                                        tolerance = tolerance,
+                                        iterStart = iterStart,
+                                        iterMax = iterMax, trace = trace,
+                                        verbose = verbose, x = x,
+                                        termPredictors = termPredictors,
+                                        ridge = ridge, ...))
         else
-            fit <- gnmFit(modelTools, y, constrain, constrainTo, nElim, family,
-                          weights, offset, nObs, start, etastart, mustart,
-                          tolerance, iterStart,
-                          iterMax, trace, verbose, x, termPredictors,
-                          lsMethod = lsMethod, ridge = ridge)
+            fit <- gnmFit(modelTools = modelTools, y = y, constrain = constrain,
+                          constrainTo = constrainTo, eliminate = eliminate,
+                          family = family, weights = weights, offset = offset,
+                          nobs = nobs, start = start, etastart = etastart,
+                          mustart = mustart, tolerance = tolerance,
+                          iterStart = iterStart, iterMax = iterMax,
+                          trace = trace, verbose = verbose, x = x,
+                          termPredictors = termPredictors,
+                          ridge = ridge)
     }
+
     if (is.null(fit)) {
         warning("Algorithm failed - no model could be estimated", call. = FALSE)
         return()
     }
 
     if (is.null(ofInterest) && !missing(eliminate))
-        ofInterest <- (nElim:nParam)[-1]
+        ofInterest <- seq_len(nParam)
     if (identical(ofInterest, "[?]"))
         call$ofInterest <- ofInterest <-
             pickCoef(fit,
@@ -230,14 +253,15 @@ gnm <- function(formula, eliminate = NULL, ofInterest = NULL,
                      "- assuming all are of interest."))
     if (is.character(ofInterest)) {
         if (length(ofInterest) == 1)
-            ofInterest <- grep(ofInterest, coefNames)
+            ofInterest <- match(grep(ofInterest, coefNames), seq_len(nParam), 0)
         else
-            ofInterest <- match(ofInterest, coefNames)
+            ofInterest <- match(ofInterest, coefNames, 0)
+        if (!sum(ofInterest)) ofInterest <- seq_len(nParam)
     }
     if (!is.null(ofInterest)) {
-        if (any(ofInterest > length(coefNames)))
+        if (!all(ofInterest %in% seq_len(nParam)))
             stop("'ofInterest' does not specify a subset of the ",
-                 "coefficients.")
+                 "non.eliminated coefficients.")
         names(ofInterest) <- coefNames[ofInterest]
     }
 
@@ -245,7 +269,7 @@ gnm <- function(formula, eliminate = NULL, ofInterest = NULL,
         data <- environment(formula)
 
     fit <- c(list(call = call, formula = formula,
-                  terms = modelTerms, data = data, eliminate = nElim,
+                  terms = modelTerms, data = data, eliminate = eliminate,
                   ofInterest = ofInterest,
                   na.action = attr(modelData, "na.action"),
                   xlevels = .getXlevels(modelTerms, modelData),

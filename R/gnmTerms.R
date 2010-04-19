@@ -1,18 +1,11 @@
 gnmTerms <- function(formula, eliminate = NULL, data = NULL)
 {
-    if (!is.null(substitute(e, list(e = eliminate)))) {
-        tmp <- .Internal(update.formula(formula,
-                                        substitute(~ e + .,
-                                                   list(e = eliminate))))
-        data <- data[!names(data) %in% deparse(eliminate)]
-        fullTerms <- terms.formula(tmp, specials = "instances", simplify = TRUE,
-                                   keep.order = TRUE, data = data)
-        attr(fullTerms, "intercept") <- 0
+    if (!is.null(eliminate)){
+        eliminate <- substitute( . ~ . - e - 1, list(e = eliminate))
+        formula <- as.formula(.Internal(update.formula(formula, eliminate)))
     }
-    else {
-        fullTerms <- terms(formula, specials = "instances", simplify = TRUE,
-                           keep.order = TRUE, data = data)
-    }
+    fullTerms <- terms(formula, specials = "instances", simplify = TRUE,
+                       keep.order = TRUE, data = data)
 
     if (is.empty.model(fullTerms))
         return(fullTerms)
@@ -41,7 +34,8 @@ gnmTerms <- function(formula, eliminate = NULL, data = NULL)
         n <- length(termLabels)
         attributes(fullTerms) <-
             c(attributes(fullTerms),
-              list(unitLabels = termLabels,
+              list(eliminate = !is.null(eliminate),
+                   unitLabels = termLabels,
                    common = logical(n),
                    block = numeric(n),
                    match = !logical(n),
@@ -146,10 +140,10 @@ gnmTerms <- function(formula, eliminate = NULL, data = NULL)
         nObs <- call("length", as.name(names(data)[1]))
     else
         nObs <- 1
-
     attributes(fullTerms) <-
         c(attributes(fullTerms),
-          list(offset = which(unique(variables) %in% offsetVars),
+          list(eliminate = !is.null(eliminate),
+               offset = which(unique(variables) %in% offsetVars),
                variables = as.call(c(quote(list), unique(variables))),
                predvars = {do.call("substitute",
                                    list(as.call(c(quote(list),

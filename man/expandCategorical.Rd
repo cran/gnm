@@ -53,7 +53,7 @@ expandCategorical(data, catvar, sep = ".", countvar = "count",
   response to be modelled as a poisson response, see examples.
 }
 \seealso{ \code{\link{gnm}}, \code{\link[nnet]{multinom}},
-  \code{\link{reshape}}, \code{\link[catspec]{mclgen}} }
+  \code{\link{reshape}}, \code{\link[catspec:mcl]{mclgen}} }
 \references{
   Anderson, J. A. (1984) Regression and Ordered Categorical
   Variables. \emph{J. R. Statist. Soc. B}, \bold{46(1)}, 1-30.
@@ -70,7 +70,7 @@ bwt.mu <- multinom(low ~ ., data = bwt)
 ## that interactions with low0 automatically set to zero, else could use
 ## 'constrain' argument. 
 bwtLong <- expandCategorical(bwt, "low", group = FALSE)
-bwt.po <- gnm(count ~  low*(.), eliminate = id, data = bwtLong, family =
+bwt.po <- gnm(count ~  low*(. - id), eliminate = id, data = bwtLong, family =
               "poisson") 
 summary(bwt.po) # same deviance; df reflect extra id parameters
 

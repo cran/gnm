@@ -1,3 +1,38 @@
+Changes in gnm 1.0-0
+====================
+
+Improvements
+------------
+
+    o	eliminated coefficients now treated entirely separately, in particular 
+	the design matrix no longer has columns for these coefficients, making
+	the algorithm far more efficient for models with many eliminated
+	coefficients.
+
+    o	more reliable calculation of rank
+
+Changes in Behaviour
+--------------------
+
+    o	ofInterest and constrain now index non-eliminated coefficients only.
+
+    o	eliminated coefficients now returned as attribute of returned 
+	coefficient vector.
+
+    o	"lsMethod" argument to gnm() removed as now the LAPACK routines are  
+	always used to determine the least squares solution at the heart of 
+	the fitting algorithm. Hence qrSolve() and cholInv() deprecated.
+
+    o	the "eliminate", "onlyFirstCol" and "onlyNonElim" arguments to
+	MPinv() have been removed as no longer used.
+
+Bug fixes
+---------
+
+    o	etastart now works for models with no linear parameters.
+
+    o	anova now ignores terms that are completely constrained.
+
 Changes in gnm 0.10-0
 =====================
 

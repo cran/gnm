@@ -1,11 +1,14 @@
 summary.gnm <- function (object, dispersion = NULL, correlation = FALSE,
-                          symbolic.cor = FALSE, ...)
+                         symbolic.cor = FALSE, with.eliminate = FALSE, ...)
 {
     est.disp <- (!object$family$family %in% c("poisson", "binomial") &&
                  is.null(dispersion) && object$df.residual > 0)
-    coefs <- coef(object)
+    coefs <- parameters(object)
+    if (with.eliminate) coefs <- c(attr(coef(object), "eliminated"), coefs)
     if (object$rank > 0) {
-        cov.scaled <- vcov(object, dispersion = dispersion)
+        cov.scaled <- vcov(object, dispersion = dispersion,
+                           with.eliminate = with.eliminate)
+        ## non-eliminated par only
         estimable <- checkEstimable(object, ...)
         estimable[is.na(estimable)] <- FALSE
         if (is.matrix(cov.scaled))
@@ -13,6 +16,15 @@ summary.gnm <- function (object, dispersion = NULL, correlation = FALSE,
         else
             sterr <- diag(cov.scaled)
         is.na(sterr[!estimable]) <- TRUE
+        if (with.eliminate){
+            ## check estimability of eliminated coefficients
+            X <- cbind(1, model.matrix(object)[,!is.na(coef(object))])
+            estimable2 <- sapply(split(1:nrow(X), object$eliminate),
+                                 function(i) {
+                                     quickRank(X[i, , drop = FALSE]) ==
+                                         quickRank(X[i, -1, drop = FALSE]) + 1})
+            sterr <- c(ifelse(estimable2, sqrt(attr(cov.scaled, "varElim")), NA), sterr)
+        }
         tvalue <- coefs/sterr
         dn <- c("Estimate", "Std. Error")
         if (!est.disp) {
@@ -39,10 +51,13 @@ summary.gnm <- function (object, dispersion = NULL, correlation = FALSE,
         cov.scaled <- matrix(, 0, 0)
     }
     df.f <- nrow(coef.table)
+    non.elim <- seq(object$coef) + nlevels(object$eliminate)*with.eliminate
+    elim <- seq(length.out = nlevels(object$eliminate)*with.eliminate)
     ans <- c(object[c("call", "ofInterest", "family", "deviance", "aic",
                       "df.residual", "iter")],
              list(deviance.resid = residuals(object, type = "deviance"),
-                  coefficients = coef.table,
+                  coefficients = coef.table[non.elim,],
+                  eliminated = coef.table[elim,],
                   dispersion = attr(cov.scaled, "dispersion"),
                   df = c(object$rank, object$df.residual, df.f),
                   cov.scaled = as.matrix(cov.scaled)))

@@ -1,6 +1,6 @@
-"gnmTools" <-
-    function(modelTerms, gnmData = NULL, x = TRUE)
+"gnmTools" <- function(modelTerms, gnmData = NULL, x = TRUE)
 {
+    eliminate <- attr(modelTerms, "eliminate")
     unitLabels <- attr(modelTerms, "unitLabels")
     common <- attr(modelTerms, "common")
     prefixLabels <- attr(modelTerms, "prefixLabels")
@@ -44,11 +44,19 @@
             adj <- adj + nLevels
         }
         else {
-            tmp <- model.matrix(terms(reformulate(c(0, unitLabels[b])),
+            intercept <- as.numeric(i == 0 && eliminate)
+            tmp <- model.matrix(terms(reformulate(c(intercept, unitLabels[b])),
                                       keep.order = TRUE), data = gnmData)
-            tmpAssign <- attr(tmp, "assign") + !attr(tmp, "assign")[1]
-            tmpAssign <- which(b)[tmpAssign]
-            nm <- paste(prefixLabels[tmpAssign], colnames(tmp)[!identical(colnames(tmp), "(Intercept)")],
+            tmpAssign <- attr(tmp, "assign")
+            if (intercept) {
+                tmp <- tmp[,-1]
+                tmpAssign <- tmpAssign[-1]
+            }
+            tmpAssign <- which(b)[tmpAssign + !tmpAssign[1]]
+            ## don't paste "(Intercept)" if non-empty prefix and only parameter
+            prefixOnly <- {identical(colnames(tmp), "(Intercept)")  &&
+                           prefixLabels[tmpAssign] != ""}
+            nm <- paste(prefixLabels[tmpAssign], colnames(tmp)[!prefixOnly],
                         sep = "")
             names(tmpAssign) <- nm
             termTools[b] <- lapply(split(1:ncol(tmp), tmpAssign),
@@ -211,7 +219,7 @@
                 for(j in fi)
                     v[[j]] <- attr(eval(varDerivs[[j]], varPredictors),
                                    "gradient")
-                .Call("single", baseMatrix, as.double(unlist(v[fi])),
+                .Call("onecol", baseMatrix, as.double(unlist(v[fi])),
                       first[i1], lt[fi[1]], nr, as.integer(length(fi)),
                       PACKAGE = "gnm")
             }

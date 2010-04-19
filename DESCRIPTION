@@ -1,7 +1,7 @@
 Package: gnm
 Title: Generalized Nonlinear Models
-Version: 0.10-0
-Date: 2009-08-11
+Version: 1.0-0
+Date: 2010-04-19
 Author: Heather Turner and David Firth
 Description: Functions to specify and fit generalized nonlinear models,
         including models with multiplicative interaction terms such as
@@ -14,8 +14,8 @@ Maintainer: Heather Turner <Heather.Turner@warwick.ac.uk>
 URL: http://go.warwick.ac.uk/gnm
 License: GPL (>= 2)
 Depends: R (>= 2.3.0)
-Imports: MASS, stats, graphics, nnet, qvcalc (>= 0.8-3), relimp
+Imports: MASS, stats, graphics, Matrix, nnet, qvcalc (>= 0.8-3), relimp
 ZipData: no
-Packaged: 2009-08-11 13:19:46 UTC; stsdan
+Packaged: 2010-04-19 12:37:35 UTC; stsdan
 Repository: CRAN
-Date/Publication: 2009-08-13 08:58:29
+Date/Publication: 2010-04-19 16:19:23

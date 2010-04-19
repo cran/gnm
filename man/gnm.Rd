@@ -13,7 +13,7 @@ gnm(formula, eliminate = NULL, ofInterest = NULL, constrain = numeric(0),
     checkLinear = TRUE, offset, start = NULL, etastart = NULL,
     mustart = NULL, tolerance = 1e-06, iterStart = 2, iterMax = 500,
     trace = FALSE, verbose = TRUE, model = TRUE, x = TRUE,
-    termPredictors = FALSE, lsMethod = "qr", ridge = 1e-08, ...) 
+    termPredictors = FALSE, ridge = 1e-08, ...) 
 }
 \arguments{
   \item{formula}{ a symbolic description of the nonlinear predictor. }
@@ -24,8 +24,8 @@ gnm(formula, eliminate = NULL, ofInterest = NULL, constrain = numeric(0),
     regular expression, a numeric vector of indices, a character vector of
     names, or "[?]" to select from a Tk dialog. If missing, it is
     assumed that all non-\code{eliminate}d coefficients are of interest. }
-  \item{constrain}{ coefficients to constrain, specified by a regular
-    expression, a numeric vector of indices, a logical vector, a
+  \item{constrain}{ (non-eliminated) coefficients to constrain, specified
+    by a regular expression, a numeric vector of indices, a logical vector, a
     character vector of names, or "[?]" to select from a Tk dialog. }
   \item{constrainTo}{ a numeric vector of the same length as
     \code{constrain} specifying the values to constrain to. By default
@@ -76,16 +76,15 @@ gnm(formula, eliminate = NULL, ofInterest = NULL, constrain = numeric(0),
     iterations to perform. }
   \item{trace}{ a logical value indicating whether the deviance
     should be printed after each iteration. }
-  \item{verbose}{ logical: if \code{TRUE} progress indicators are
-    printed as the model is fitted, including a diagnostic error message
-    if the algorithm restarts. } 
+  \item{verbose}{ logical: if \code{TRUE} and model includes nonlinear
+    terms, progress indicators are printed as the model is fitted,
+    including a diagnostic error message if the algorithm restarts. } 
   \item{model}{ logical: if \code{TRUE} the model frame is returned. }
   \item{x}{ logical: if \code{TRUE} the local design matrix from the last
     iteration is included as a component of returned model object. }
   \item{termPredictors}{ logical: if \code{TRUE}, a matrix is returned
     with a column for each term in the model, containing the additive
     contribution of that term to the predictor. }
-  \item{lsMethod}{ character: must be one of "chol" or "qr".}
   \item{ridge}{numeric, a positive value for the ridge constant to be
     used in the fitting algorithm}
   \item{\dots}{ further arguments passed to fitting function. }
@@ -147,20 +146,13 @@ gnm(formula, eliminate = NULL, ofInterest = NULL, constrain = numeric(0),
   updated one parameter at a time, then the linear parameters are
   jointly updated before the next iteration. In the main iterations, all
   the parameters are jointly updated, until convergence is reached or
-  the number or iterations reaches \code{iterMax}.    The
-  \code{lsMethod} argument specifies
-  what numerical method is to be used to solve the
+  the number or iterations reaches \code{iterMax}. To solve the
   (typically rank-deficient) least squares problem at the heart of the
-  \code{gnm} fitting algorithm: the options are 
-  direct solution using a QR decomposition (\code{"qr"}), and matrix
-  inversion via Cholesky decomposition (\code{"chol"}).  In both cases,
-  the design matrix is standardized and regularized (in the
-  Levenberg-Marquardt sense) prior to solving; the \code{ridge} argument
-  provides a degree of control over the regularization performed
-  (smaller values may sometimes give faster convergence but can lead
-  to numerical instability).  If \code{lsMethod} is
-  left unspecified, the default is \code{"qr"}, unless \code{eliminate}
-  is used in which case the default \code{lsMethod} used is \code{"chol"}. 
+  \code{gnm} fitting algorithm,  the design matrix is standardized and
+  regularized (in the Levenberg-Marquardt sense) prior to solving; the
+  \code{ridge} argument provides a degree of control over the
+  regularization performed (smaller values may sometimes give faster
+  convergence but can lead to numerical instability).
 
   Convergence is judged by comparing the squared components of the score vector
   with corresponding elements of the diagonal of the Fisher information
@@ -211,10 +203,12 @@ gnm(formula, eliminate = NULL, ofInterest = NULL, constrain = numeric(0),
   \item{ xlevels }{ a record of the levels of the factors used in fitting. }
   \item{ y }{ the response used. }
   \item{ offset }{ the offset vector used. }
-  \item{ coefficients }{ a named vector of coefficients. }
-  \item{ eliminate }{ the number of eliminated parameters. }
-  \item{ ofInterest }{ a named numeric vector of indices, or
-    \code{NULL}. }
+  \item{ coefficients }{ a named vector of non-eliminated coefficients,
+    with an attribute \code{"eliminated"} specifying the eliminated
+    coefficients if \code{eliminate} is non-\code{NULL}. }
+  \item{ eliminate }{ the \code{eliminate} argument. }
+  \item{ ofInterest }{ a named numeric vector of indices corresponding
+    to non-eliminated coefficients, or \code{NULL}. }
   \item{ predictors }{ the fitted values on the link scale. }
   \item{ fitted.values }{ the fitted mean values, obtained by transforming the
     predictors by the inverse of the link function. }

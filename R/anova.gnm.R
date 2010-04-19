@@ -15,15 +15,11 @@ anova.gnm <- function (object, ..., dispersion = NULL, test = NULL)
                              test = test))
 
     x <- model.matrix(object)
-    if (object$eliminate) {
-        varlist <- labels(object)[-1]
-        varseq <- attr(x, "assign") - 1
-    }
-    else {
-        varlist <- labels(object)
-        varseq <- attr(x, "assign")
-    }
-    nvars <- max(0, varseq)
+    varlist <- labels(object)
+    varseq <- attr(x, "assign")
+    pars <- setdiff(unique(varseq), c(0, varseq[object$constrain]))
+
+    nvars <- length(varlist)
 
     nonlinear <- match(TRUE, attr(terms(object), "type") != "Linear")
 
@@ -34,8 +30,8 @@ anova.gnm <- function (object, ..., dispersion = NULL, test = NULL)
     origConstrain <- object$constrain
     origConstrainTo <- object$constrainTo
     if (nvars > 0) {
-        for (i in seq(nvars)) {
-            if (i < nonlinear){
+        for (i in pars) {
+            if (i < nonlinear && is.null(object$eliminate)){
                 fit <- glm.fit(x = x[, varseq < i, drop = FALSE],
                                y = c(object$y), offset = c(object$offset),
                                start = object$start,
@@ -44,7 +40,7 @@ anova.gnm <- function (object, ..., dispersion = NULL, test = NULL)
             }
             else {
                 fit <- update(object, constrain = c(origConstrain,
-                                      seq(varseq)[varseq >= i]),
+                                      which(varseq >= i)),
                               constrainTo = c(origConstrainTo,
                                       rep(0, sum(varseq >= i))),
                               verbose = FALSE)

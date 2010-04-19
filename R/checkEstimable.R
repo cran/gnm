@@ -1,5 +1,6 @@
-checkEstimable <- function(model, combMatrix = diag(seq(along = coef(model))),
-                           tolerance = 1e6 * .Machine$double.eps)
+checkEstimable <- function(model,
+                            combMatrix = diag(length(coef(model))),
+                            tolerance = NULL)
 {
     if (!inherits(model, "gnm")) stop("model not of class gnm")
     coefs <- coef(model)
@@ -12,9 +13,21 @@ checkEstimable <- function(model, combMatrix = diag(seq(along = coef(model))),
     resultNA <- apply(combMatrix, 2, function(col) any(is.na(col)))
     result <- logical(ncol(combMatrix))
     is.na(result) <- resultNA
-    resids <- qr.resid(qr(crossprod(X)), combMatrix[, !resultNA, drop = FALSE])
-    rms <- apply(resids, 2, sd)
-    result[!resultNA] <- rms < tolerance
+    eliminate <- model$eliminate
+    if (!is.null(eliminate)) {
+        ## sweeps needed to get the rank right
+        subtracted <- rowsum(X, eliminate)/tabulate(eliminate)
+        if (attr(terms(model), "intercept") == 1) subtracted[,1] <- 0
+        X <- X - subtracted[eliminate,]
+    }
+    rankX <- model$rank - nlevels(eliminate)
+    check.1 <- function(comb){
+        Xc <- rbind(X, comb)
+        rankXc <- quickRank(Xc, tol = tolerance)
+        return(rankXc == rankX)
+    }
+    result[!resultNA] <- apply(combMatrix[, !resultNA, drop = FALSE],
+                               2, check.1)
     names(result) <- colnames(combMatrix)
     return(result)
 }
