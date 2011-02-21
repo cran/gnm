@@ -2,7 +2,7 @@ useDynLib(gnm)
 export(asGnm, checkEstimable, Const, Diag,
        Dref, DrefWeights, exitInfo, Exp, expandCategorical, getContrasts,
        getModelFrame, gnm, instances, Inv, #Log, Logit,
-       MPinv, Mult, MultHomog,
+       meanResiduals, MPinv, Mult, MultHomog,
        ofInterest, "ofInterest<-", parameters,
        pickCoef, qrSolve, #Raise,
        residSVD, se,
@@ -48,14 +48,17 @@ S3method(print, coef.gnm)
 S3method(print, profile.gnm)
 S3method(print, summary.gnm)
 S3method(print, vcov.gnm)
+S3method(print, meanResiduals)
 S3method(profile, gnm)
 S3method(proj, gnm)
 S3method(residuals, gnm)
 S3method(rstandard, gnm)
 S3method(rstudent, gnm)
 S3method(summary, gnm)
+S3method(summary, meanResiduals)
 S3method(termPredictors, default)
 S3method(termPredictors, gnm)
+S3method(update, gnm)
 S3method(variable.names, gnm)
 S3method(vcov, gnm)
 S3method(weights, gnm)
