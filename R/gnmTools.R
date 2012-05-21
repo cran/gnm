@@ -18,26 +18,27 @@
     for (i in blockID) {
         b <- block == i
         if (all(common[b])) {
-            designList <- lapply(unitLabels[b],
-                                 function(x) class.ind(gnmData[[x]]))
-
-            ## get labels for all levels
-            allLevels <- lapply(designList, colnames)
+            ## get full set of levels
+            allLevels <- lapply(unitLabels[b],
+                                function(x) levels(factor(eval(parse(text = x),
+                                                               gnmData))))
             labels <- unique(unlist(allLevels))
-            nLevels <- length(labels)
-
-            ## expand design matrices if necessary
             if (!all(mapply(identical, allLevels, list(labels)))) {
                 labels <- sort(labels)
-                M <- matrix(0, nrow = nrow(designList[[1]]), ncol = nLevels,
-                            dimnames = list(NULL, labels))
-                designList <- lapply(designList, function(design, M) {
-                    M[,colnames(design)] <- design
-                    M}, M)
             }
+            nLevels <- length(labels)
+
+            ## create design matrices
+            termTools[b] <- lapply(unitLabels[b],
+                                   function(x) {
+                                       class.ind(factor(eval(parse(text = x),
+                                                             gnmData),
+                                                        levels = labels))
+                                   })
+
+            ## create labels
             i <- which(b)
             nm <- paste(prefixLabels[i], labels, sep = "")
-            termTools[b] <- designList
             factorAssign[b] <- lapply(i, function(x, nLevels, nm)
                                       structure(rep(x, nLevels), names = nm),
                                       nLevels, nm)
@@ -103,6 +104,9 @@
     colnames(X) <- parLabels
     X <- X[, uniq, drop = FALSE]
 
+    ## check for zero columns
+    constrain <- which(colSums(X) == 0)
+
     theta <- rep(NA, nTheta)
     for (i in blockID) {
         b <- block == i
@@ -148,19 +152,29 @@
         if (term) {
             es <- lapply(attr(modelTerms, "predictor"), function(x) {
                 do.call("bquote", list(x, gnmData))})
-            tp <- matrix(sapply(es, eval, varPredictors), nr)
+            tp <- matrix(sapply(es, eval, c(varPredictors, gnmData)), nr)
             colnames(tp) <- c("(Intercept)"[attr(modelTerms, "intercept")],
                               attr(modelTerms, "term.labels"))
             tp
         }
         else
-            eval(e, varPredictors)
+            eval(e, c(varPredictors, gnmData))
     }
 
     gnmData <- lapply(gnmData[, !names(gnmData) %in% varLabels, drop = FALSE],
                       drop)
-    e <- do.call("bquote",
-                 list(sumExpression(attr(modelTerms, "predictor")), gnmData))
+    e <- sumExpression(attr(modelTerms, "predictor"))
+    ## remove bquotes: .() -- if works, should not put in in first place!
+    my.unquote <- function(e) {
+        if (length(e) <= 1L)
+            e
+        else if (e[[1L]] == as.name("."))
+            e[[2L]]
+        else if (is.pairlist(e))
+            as.pairlist(lapply(e, my.unquote))
+        else as.call(lapply(e, my.unquote))
+    }
+    e <- my.unquote(e)
     varDerivs <- lapply(varLabels, deriv, expr = e)
 
 
@@ -194,7 +208,7 @@
                         ind <- ind - z[factorAssign[ind] - 1]
                 }
                 if (type[fi]) {
-                    v <- attr(eval(varDerivs[[fi]], varPredictors),
+                    v <- attr(eval(varDerivs[[fi]], c(varPredictors, gnmData)),
                               "gradient")
                     .Call("subprod", X, baseMatrix, as.double(v),
                           first[i1], last[i2], nr, PACKAGE = "gnm")
@@ -205,7 +219,7 @@
         }
         else {
             if (is.null(ind)){
-                v <- attr(eval(specialVarDerivs, varPredictors),
+                v <- attr(eval(specialVarDerivs, c(varPredictors, gnmData)),
                           "gradient")
                 .Call("newsubprod", baseMatrix, as.double(v), X,
                       first[a[tmpID]], first[vID], firstX[a[tmpID]],
@@ -217,7 +231,7 @@
                 fi <- unique(factorAssign[commonAssign == commonAssign[i1]])
                 v <- list()
                 for(j in fi)
-                    v[[j]] <- attr(eval(varDerivs[[j]], varPredictors),
+                    v[[j]] <- attr(eval(varDerivs[[j]], c(varPredictors, gnmData)),
                                    "gradient")
                 .Call("onecol", baseMatrix, as.double(unlist(v[fi])),
                       first[i1], lt[fi[1]], nr, as.integer(length(fi)),
@@ -226,7 +240,7 @@
         }
     }
 
-    toolList <- list(start = theta, varPredictors = varPredictors,
+    toolList <- list(start = theta, constrain = constrain, varPredictors = varPredictors,
                      predictor = predictor, localDesignFunction = localDesignFunction)
     if (x) toolList$termAssign <- termAssign[uniq]
     toolList

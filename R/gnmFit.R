@@ -36,6 +36,10 @@ gnmFit <-
         alpha <- 0
     }
     non.elim <- seq.int(nelim + 1, length(start))
+    extra <- setdiff(modelTools$constrain, constrain)
+    ind <- order(c(constrain, extra))
+    constrain <- c(constrain, extra)[ind]
+    constrainTo <- c(constrainTo, numeric(length(extra)))[ind]
     isConstrained <- is.element(seq(nTheta), constrain)
     XWX <- NULL
     repeat {
@@ -74,7 +78,8 @@ gnmFit <-
                 tmpOffset <- rowSums(naToZero(tmpOffset))
                 tmpOffset <- offset + alpha[eliminate] + tmpOffset
                 ## assume either elim all specified or all not specified
-                tmpTheta <- suppressWarnings(glm.fit.e(X[, unspecifiedLin], z,
+                tmpTheta <- suppressWarnings(glm.fit.e(X[, unspecifiedLin, drop = FALSE],
+                                                       z,
                                                        weights = weights,
                                                        etastart = etastart,
                                                        offset = tmpOffset,
@@ -87,7 +92,8 @@ gnmFit <-
                 theta[unspecifiedLin] <- tmpTheta
                 if (initElim) alpha <- unname(attr(tmpTheta, "eliminated"))
                 if (sum(is.na(theta[isLinear])) > length(constrain)) {
-                    extra <- setdiff(which(is.na(theta[isLinear])), constrain)
+                    ## any NA will be linear here
+                    extra <- setdiff(which(is.na(theta)), constrain)
                     isConstrained[extra] <- TRUE
                     ind <- order(c(constrain, extra))
                     constrain <- c(constrain, extra)[ind]
@@ -331,6 +337,7 @@ gnmFit <-
     }
     theta[constrain] <- NA
     X <- modelTools$localDesignFunction(theta, varPredictors)
+    X <- X[, !isConstrained, drop = FALSE]
     if (nelim) {
         ## sweeps needed to get the rank right
         subtracted <- quick.rowsum(X, eliminate, elim)/grp.size
@@ -362,7 +369,10 @@ gnmFit <-
     else
         fit$converged <- TRUE
 
-    if (x) fit$x <- structure(X, assign = modelTools$termAssign)
+    if (x) {
+        X <- modelTools$localDesignFunction(theta, varPredictors)
+        fit$x <- structure(X, assign = modelTools$termAssign)
+    }
     if (termPredictors) {
         theta[is.na(theta)] <- 0
         varPredictors <- modelTools$varPredictors(theta)
