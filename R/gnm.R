@@ -138,10 +138,12 @@ gnm <- function(formula, eliminate = NULL, ofInterest = NULL,
                                         "No parameters were specified to constrain",
                                         return.indices = TRUE))
         if (is.character(constrain)) {
-            if (length(constrain) == 1)
-                constrain <- match(grep(constrain, coefNames), seq_len(nParam), 0)
-            else
-                constrain <- match(constrain, coefNames, 0)
+            res <- match(constrain, coefNames, 0)
+            if (res == 0 && length(constrain) == 1){
+                constrain <- match(grep(constrain, coefNames),
+                                       seq_len(nParam),  0)
+            }
+            else constrain <- res
         }
         ## dropped logical option
         if (!all(constrain %in% seq_len(nParam)))
@@ -203,9 +205,9 @@ gnm <- function(formula, eliminate = NULL, ofInterest = NULL,
             names(fit)[match("linear.predictors", names(fit))] <- "predictors"
             fit$constrain <- constrain
             fit$constrainTo <- constrainTo
-            if (x) fit$x <- X
-            if (is.null(fit$offset))
-                fit$offset <- rep.int(0, length(coef(fit)))
+            if (x) {
+                fit$x <- X
+            }
             if (termPredictors) {
                 modelTools <- gnmTools(modelTerms, modelData)
                 varPredictors <- modelTools$varPredictors(naToZero(coef(fit)))
@@ -267,7 +269,6 @@ gnm <- function(formula, eliminate = NULL, ofInterest = NULL,
 
     if (missing(data))
         data <- environment(formula)
-
     fit <- c(list(call = call, formula = formula,
                   terms = modelTerms, data = data, eliminate = eliminate,
                   ofInterest = ofInterest,
@@ -275,6 +276,27 @@ gnm <- function(formula, eliminate = NULL, ofInterest = NULL,
                   xlevels = .getXlevels(modelTerms, modelData),
                   offset = offset, tolerance = tolerance, iterStart = iterStart,
                   iterMax = iterMax), fit)
+
+    if (!missing(eliminate) && ordTRUE) {
+        reorder <- order(ord)
+        fit <- within(fit, {
+            y <- y[reorder]
+            fitted.values <- fitted.values[reorder]
+            predictors <- predictors[reorder]
+            residuals <- residuals[reorder]
+            weights <- weights[reorder]
+            prior.weights <- prior.weights[reorder]
+            eliminate <- eliminate[reorder]
+            offset <- offset[reorder]
+        })
+        modelData <- modelData[reorder,]
+        y <- y[reorder]
+        if (x) {
+            asgn <- attr(fit$x, "assign")
+            fit$x <- fit$x[reorder,]
+            attr(fit$x, "assign") <- asgn
+        }
+    }
 
     asY <- c("predictors", "fitted.values", "residuals", "prior.weights",
              "weights", "y", "offset")

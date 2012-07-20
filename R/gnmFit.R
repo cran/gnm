@@ -36,7 +36,25 @@ gnmFit <-
         alpha <- 0
     }
     non.elim <- seq.int(nelim + 1, length(start))
-    extra <- setdiff(modelTools$constrain, constrain)
+    ## add constraints specified by modelTools and glm
+    tmpTheta <- as.double(rep(NA, nTheta))
+    varPredictors <- modelTools$varPredictors(tmpTheta)
+    X <- modelTools$localDesignFunction(tmpTheta, varPredictors)
+    isLinear <- unname(!is.na(colSums(X)))
+    if (any(isLinear)) {
+        tmpTheta[isLinear] <-
+            suppressWarnings(glm.fit.e(X[, isLinear, drop = FALSE], y,
+                                       family = family,
+                                       intercept = FALSE,
+                                       eliminate = if (nelim) eliminate
+                                       else NULL,
+                                       coefonly = TRUE,
+                                       control = glm.control(maxit = 1)))
+
+        extraLin <- which(isLinear & is.na(tmpTheta))
+    } else extraLin <- numeric()
+
+    extra <- setdiff(c(modelTools$constrain, extraLin), constrain)
     ind <- order(c(constrain, extra))
     constrain <- c(constrain, extra)[ind]
     constrainTo <- c(constrainTo, numeric(length(extra)))[ind]
@@ -55,11 +73,7 @@ gnmFit <-
             theta[is.na(theta)] <- modelTools$start[is.na(theta)]
             names(theta) <- names(modelTools$start)
             theta[constrain] <- constrainTo
-            tmpTheta <- as.double(rep(NA, nTheta))
-            varPredictors <- modelTools$varPredictors(tmpTheta)
-            X <- modelTools$localDesignFunction(tmpTheta, varPredictors)
             ## update any unspecified linear parameters
-            isLinear <- unname(!is.na(colSums(X)))
             unspecified <- unname(is.na(theta))
             unspecifiedLin <- unspecified & isLinear
             unspecifiedNonlin <- unspecified & !isLinear
@@ -77,29 +91,20 @@ gnmFit <-
                 tmpOffset <- modelTools$predictor(varPredictors, term = TRUE)
                 tmpOffset <- rowSums(naToZero(tmpOffset))
                 tmpOffset <- offset + alpha[eliminate] + tmpOffset
-                ## assume either elim all specified or all not specified
-                tmpTheta <- suppressWarnings(glm.fit.e(X[, unspecifiedLin, drop = FALSE],
-                                                       z,
-                                                       weights = weights,
-                                                       etastart = etastart,
-                                                       offset = tmpOffset,
-                                                       family = family,
-                                                       intercept = FALSE,
-                                                       eliminate =
-                                                       if (initElim) eliminate
-                                                       else NULL,
-                                                       coefonly = TRUE))
-                theta[unspecifiedLin] <- tmpTheta
+                ## starting values for elim ignored here
+                tmpTheta <- suppressWarnings({
+                    glm.fit.e(X[, unspecifiedLin, drop = FALSE],
+                              z,
+                              weights = weights,
+                              etastart = etastart,
+                              offset = tmpOffset,
+                              family = family,
+                              intercept = FALSE,
+                              eliminate = if (nelim) eliminate else NULL,
+                              coefonly = TRUE)})
+                ## if no starting values for elim, use result of above
                 if (initElim) alpha <- unname(attr(tmpTheta, "eliminated"))
-                if (sum(is.na(theta[isLinear])) > length(constrain)) {
-                    ## any NA will be linear here
-                    extra <- setdiff(which(is.na(theta)), constrain)
-                    isConstrained[extra] <- TRUE
-                    ind <- order(c(constrain, extra))
-                    constrain <- c(constrain, extra)[ind]
-                    constrainTo <- c(constrainTo, numeric(length(extra)))[ind]
-                }
-                theta[unspecifiedLin] <- naToZero(theta[unspecifiedLin])
+                theta[unspecifiedLin] <- naToZero(tmpTheta)
             }
             if (any(unspecifiedNonlin) && !is.null(etastart)){
                 ## offset linear terms
@@ -137,7 +142,8 @@ gnmFit <-
             mu <- family$linkinv(eta)
             dev[1] <- sum(family$dev.resids(y, mu, weights))
             if (trace)
-                prattle("Initial Deviance = ", dev[1], "\n", sep = "")
+                prattle("Initial Deviance = ",
+                        format(dev[1], nsmall = 6), "\n", sep = "")
             for (iter in seq(length = iterStart * any(unspecifiedNonlin))) {
                 if (verbose) {
                     if (iter == 1)
@@ -186,7 +192,7 @@ gnmFit <-
                 dev[1] <- sum(family$dev.resids(y, mu, weights))
                 if (trace)
                     prattle("Start-up iteration ", iter, ". Deviance = ",
-                            dev[1], "\n", sep = "")
+                            format(dev[1], nsmall = 6), "\n", sep = "")
                 else if (verbose)
                     prattle(".")
                 if (status == "bad.param")
@@ -206,7 +212,7 @@ gnmFit <-
             mu <- family$linkinv(eta)
             dev[1] <- sum(family$dev.resids(y, mu, weights))
             if (trace)
-                prattle("Initial Deviance = ", dev, "\n", sep = "")
+                prattle("Initial Deviance = ", format(dev[1], nsmall = 6), "\n", sep = "")
         }
         if (status == "not.converged") {
             X <-  modelTools$localDesignFunction(theta, varPredictors)
@@ -244,6 +250,10 @@ gnmFit <-
                 ZWZ[1,1] <- sum(z * z)
                 diagInfo <- diag(ZWZ)
                 ## only check for non-eliminated coefficients
+                if (any(!is.finite(diagInfo))) {
+                    status <- "fail"
+                    break
+                }
                 if (all(diagInfo < 1e-20) ||
                     all(abs(score) <
                         tolerance * sqrt(tolerance + diagInfo[-1]))) {
@@ -292,7 +302,8 @@ gnmFit <-
                 }
                 if (status == "no.deviance") break
                 if (trace){
-                    prattle("Iteration ", iter, ". Deviance = ", dev[1],
+                    prattle("Iteration ", iter, ". Deviance = ",
+                            format(dev[1], nsmall = 6),
                             "\n", sep = "")
                 }
                 else if (verbose)
