@@ -84,7 +84,7 @@
     if (intercept) x <- x[, -1, drop = FALSE] #non-null eliminate
     if (non.elim) {
         ## sweeps needed to get the rank right
-        subtracted <- quick.rowsum(x, eliminate, elim)/size
+        subtracted <- rowsum.default(x, eliminate, reorder = FALSE)/size
         x <- x - subtracted[eliminate,]
         ## initial fit to drop aliased columns
         model <- lm.wfit(x, z, w, offset = os.vec)
@@ -106,7 +106,7 @@
     for (i in 1:control$maxit) {
         ## try without scaling etc - already of full rank
         Tvec <- sqrt(grp.sum(w, end))
-        Umat <- quick.rowsum(w * Z, eliminate, elim)
+        Umat <- rowsum.default(w * Z, eliminate, reorder = FALSE)
         Umat <- Umat/Tvec
         Wmat <- crossprod(sqrt(w) * Z)
         diag(Wmat) <- diag(Wmat) + ridge

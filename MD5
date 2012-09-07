@@ -1,4 +1,4 @@
-e479d0a6b3374a24c5dbdf4495d6f7f2 *DESCRIPTION
+8d786cf425496328caac53c987a3ca58 *DESCRIPTION
 8285accfa7f7d4838e714e69afdde143 *NAMESPACE
 b1d819d353bdd1a568f98437e7906cb4 *R/Const.R
 bb50606bc422af76e9c694275de7d2cf *R/Diag.R
@@ -42,13 +42,13 @@ ee5e94871db0cc3a3d4c39a536145e99 *R/expandCategorical.R
 d85548d5610ebf4eac4bac4d8599f79b *R/fitted.gnm.R
 2ab07b6160fc9654e5b42665d34764c2 *R/getContrasts.R
 20457153326e678c211cc7ebe0473829 *R/getData.R
-f31d0bacaedc0e26b5616d2e237c1386 *R/glm.fit.e.R
+f3e50f20332330722f9bde2e151bcb87 *R/glm.fit.e.R
 e0e949a1cd65be0f3dd1202da6f4343e *R/gnm-defunct.R
 328a913d95b4350291a33af8f5028efb *R/gnm.R
-244ab47b34115a094ca6437e979bdfa0 *R/gnmFit.R
+2f756f966718182239e2c6af72f5481d *R/gnmFit.R
 ace606bfe9dbab0699e4d07cfb1a84eb *R/gnmStart.R
 f344b2fc223c2e2e0f1b2fa66b4fd2c2 *R/gnmTerms.R
-c1925434181c27648345c518521b1214 *R/gnmTools.R
+ceb866905d17209b7cbcbbe6e66ff6cb *R/gnmTools.R
 3df621ba84efb8f5abd6a57236b66856 *R/grp.sum.R
 3efe1655f0e7de404bea902009cc6da8 *R/hashSplit.R
 0379fb17f1ddc776161f6bb258393fe7 *R/hatvalues.gnm.R
@@ -81,7 +81,6 @@ f161583f284aada5d7c5809001cd333f *R/print.summary.gnm.R
 0a77efb36d87dad28b1863a635bc5b88 *R/proj.gnm.R
 fb7445a90097ba421fc13e884276f70b *R/psum.R
 0d856878a34c140fd958606a6a72291f *R/quick.glm.fit.R
-4c30536082868fe0a9acb054de7e9b94 *R/quick.rowsum.R
 7fadca485a3ff2612b0e65779c766260 *R/quickRank.R
 f5bc1d56ed582c62c055fe06ec3ea4a0 *R/residSVD.R
 49859f59b26149a22e2cf685dee64c12 *R/residuals.gnm.R
@@ -124,9 +123,9 @@ fef72c329c2834b0ad1797e8fc6271ac *data/yaish.rda
 c8c477e8cc92a00190fc07f155cc1df8 *demo/00Index
 ff7119032b41d892e8667006bd7cde99 *demo/gnm.R
 b32f42d7df5a203bf363c5d922fe4a00 *inst/CITATION
-cee35c042a06a8e30cab547007761481 *inst/NEWS
+edbbaa29397860edd6ade001bf4dcf9d *inst/NEWS
 6fc4a31a74e5de5c877f2cb657f5e781 *inst/doc/gnmOverview.Rnw
-ff9f85c1cb2cb6e34520c15db9a62d4a *inst/doc/gnmOverview.pdf
+32c00c602187f2fe7d42a76164111265 *inst/doc/gnmOverview.pdf
 85e992e91d7cba65da2a6d599bd31413 *man/Const.Rd
 e1f037318eed6453bfe84dc897cff5d9 *man/Diag.Rd
 b4f2dc6727b168a83287005e8324e56e *man/Dref.Rd
@@ -135,7 +134,7 @@ b4f2dc6727b168a83287005e8324e56e *man/Dref.Rd
 264892ca68e2b7c62ed161035af01d9e *man/Inv.Rd
 54cc9b42fc8ffdf55617644716395081 *man/MPinv.Rd
 a9d44d785b7be94bc1224057dc3fcfc8 *man/Mult.Rd
-b32dbdc38461d90d1d06a66bddf94cc7 *man/MultHomog.Rd
+130bfb73fde3e3fe659596eab5fbe6d8 *man/MultHomog.Rd
 5ccdb4b2bfdd5fa252be9e36203853f9 *man/Symm.Rd
 71014e5fac193b5c3853f09232382827 *man/Topo.Rd
 8e7d470e4c02835a9816457400386236 *man/anova.gnm.Rd
@@ -145,11 +144,11 @@ b32dbdc38461d90d1d06a66bddf94cc7 *man/MultHomog.Rd
 41645fe374d0b91f1e4693e4a421e689 *man/barleyHeights.Rd
 d0253010b693c26bcc0efab689a847d9 *man/cautres.Rd
 f5e24e1f44a3e5ea87d32d97f6bd821e *man/checkEstimable.Rd
-cc669d86c0415ee1a850a86c1e712734 *man/confint.gnm.Rd
+c8df7eae9bbf0c59d238d09fcde57624 *man/confint.gnm.Rd
 3ec32da86090f99b86e65b21ebd77373 *man/erikson.Rd
 030eaddfd8663353e71d525969c0817d *man/exitInfo.Rd
 6ec5bab9ae9e1ad06daf37f36916654f *man/expandCategorical.Rd
-744ee1215289efa4e7c0285a62639abf *man/friend.Rd
+0c533fb677a4f1ed8ea197035cbdef7f *man/friend.Rd
 f1a3b65edcc3112c3faaaa7f12ecb6b0 *man/getContrasts.Rd
 5db92406797fbf7005362f638dd72983 *man/gnm-defunct.Rd
 208e6ad06c53ef31dc053af2dcb55031 *man/gnm-package.Rd
@@ -167,7 +166,7 @@ bcce99ba885a3f8550647a3c0d461cf8 *man/predict.gnm.Rd
 d8b4ac94d5443c995c99090a051f7d34 *man/profile.gnm.Rd
 51a167a992ee41bb2558afe10430449c *man/residSVD.Rd
 7db0fc7bb0f22131af6a7bdcdb46732b *man/se.Rd
-4dfe875a36b9402de275cdbcb0ffac4e *man/summary.gnm.Rd
+f6e84a908e967e375ddb42d338ce2093 *man/summary.gnm.Rd
 badbc1338de4cc070474541ba8db74cb *man/termPredictors.Rd
 67b3a21ee9537ec8f22cd26654a69e8e *man/vcov.gnm.Rd
 6058a462a09ef17f9ec01627ae519011 *man/voting.Rd
@@ -178,8 +177,8 @@ e7c4d55d6cb41eea317e51f30725a01d *man/wheat.Rd
 5ca65af217c0058c0709805a1bc32c20 *src/gnm.c
 1d8feb20aa25d549a17d2d8d3850aa92 *tests/RC.R
 d4a449a9c900d32a7cf611d6c871eae8 *tests/RC.Rout.save
-da49f66103633a8bb54294bf53d1bbcb *tests/RChomog.R
-a315dc3cf3a2ffe42eefc39a2122efd1 *tests/RChomog.Rout.save
+bde3b3b5e848b27071726852fe039503 *tests/RChomog.R
+f108d9f10c0abd4a1e7b4c8aee908cb8 *tests/RChomog.Rout.save
 45dc1d1e456d831663dd01095cad9857 *tests/biplot.R
 20a9a60e6875141ba6272cc3e8cee3c8 *tests/biplot.Rout.save
 50e1daa0d086b0e3877642f07e9ebbb4 *tests/bwt.R
