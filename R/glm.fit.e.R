@@ -64,14 +64,12 @@
     nelim <- rank <- nlevels(eliminate)
     elim <- seq.int(nelim)
     if (is.null(start)) { # use either y or etastart or mustart
-        if (is.null(mustart) && is.null(etastart)) {
-            elim.means <- grp.sum(y, end)/size
-            os.by.level <- link(0.999 * elim.means + 0.001 * mean(y)) -
-                grp.sum(offset, end)/size
-        } else {
-            if (!is.null(mustart)) etastart <- link(mustart)
-            os.by.level <- grp.sum(etastart - offset, end)/size
-        }
+        if (!is.null(etastart)) mustart <- linkinv(etastart)
+        if (!is.null(mustart)) z <- mustart
+        else z <- y
+        elim.means <- grp.sum(z, end)/size
+        os.by.level <- link(0.999 * elim.means + 0.001 * mean(z)) -
+            grp.sum(offset, end)/size
     } else os.by.level <- start[elim]
     os.vec <- os.by.level[eliminate]
     eta.stored <- eta <- offset + os.vec
@@ -149,7 +147,8 @@
     w <- weights * (mu.eta)^2/variance(mu)
     if (coefonly) return(structure(full.theta, eliminated = c(os.by.level)))
     aic.model <- aic(y, sum(weights > 0), mu, weights, dev) + 2 * rank
-    list(coefficients = structure(full.theta, eliminated = c(os.by.level)),
+    eliminated <- structure(c(os.by.level), names = levels(eliminate))
+    list(coefficients = structure(full.theta, eliminated = eliminated),
          residuals = (y - mu) / linkder(eta),
          fitted.values = mu,
          rank = rank,

@@ -1,4 +1,4 @@
-8d786cf425496328caac53c987a3ca58 *DESCRIPTION
+baa30c1f2865640eb26ce15cff8b4777 *DESCRIPTION
 8285accfa7f7d4838e714e69afdde143 *NAMESPACE
 b1d819d353bdd1a568f98437e7906cb4 *R/Const.R
 bb50606bc422af76e9c694275de7d2cf *R/Diag.R
@@ -42,10 +42,10 @@ ee5e94871db0cc3a3d4c39a536145e99 *R/expandCategorical.R
 d85548d5610ebf4eac4bac4d8599f79b *R/fitted.gnm.R
 2ab07b6160fc9654e5b42665d34764c2 *R/getContrasts.R
 20457153326e678c211cc7ebe0473829 *R/getData.R
-f3e50f20332330722f9bde2e151bcb87 *R/glm.fit.e.R
+a43213c2e7155330d92d6f717735460f *R/glm.fit.e.R
 e0e949a1cd65be0f3dd1202da6f4343e *R/gnm-defunct.R
 328a913d95b4350291a33af8f5028efb *R/gnm.R
-2f756f966718182239e2c6af72f5481d *R/gnmFit.R
+7aa09ac6759a005d128a03c2847ea941 *R/gnmFit.R
 ace606bfe9dbab0699e4d07cfb1a84eb *R/gnmStart.R
 f344b2fc223c2e2e0f1b2fa66b4fd2c2 *R/gnmTerms.R
 ceb866905d17209b7cbcbbe6e66ff6cb *R/gnmTools.R
@@ -123,9 +123,9 @@ fef72c329c2834b0ad1797e8fc6271ac *data/yaish.rda
 c8c477e8cc92a00190fc07f155cc1df8 *demo/00Index
 ff7119032b41d892e8667006bd7cde99 *demo/gnm.R
 b32f42d7df5a203bf363c5d922fe4a00 *inst/CITATION
-edbbaa29397860edd6ade001bf4dcf9d *inst/NEWS
-6fc4a31a74e5de5c877f2cb657f5e781 *inst/doc/gnmOverview.Rnw
-32c00c602187f2fe7d42a76164111265 *inst/doc/gnmOverview.pdf
+dee3a0359c6a1d764c2cb4187194b707 *inst/NEWS
+f297dbd2cb8285584ce844f73119e099 *inst/doc/gnmOverview.Rnw
+772b8bbac65a0f3727e551da301d77a5 *inst/doc/gnmOverview.pdf
 85e992e91d7cba65da2a6d599bd31413 *man/Const.Rd
 e1f037318eed6453bfe84dc897cff5d9 *man/Diag.Rd
 b4f2dc6727b168a83287005e8324e56e *man/Dref.Rd
@@ -152,7 +152,7 @@ c8df7eae9bbf0c59d238d09fcde57624 *man/confint.gnm.Rd
 f1a3b65edcc3112c3faaaa7f12ecb6b0 *man/getContrasts.Rd
 5db92406797fbf7005362f638dd72983 *man/gnm-defunct.Rd
 208e6ad06c53ef31dc053af2dcb55031 *man/gnm-package.Rd
-90115408d6c9c003d8ec16abd4f8a2bf *man/gnm.Rd
+280082e0eea7b8e34c77a033a5d7b8df *man/gnm.Rd
 3a1583325da9ed343dbff9b624b69b46 *man/instances.Rd
 73c72aa53bd22fe017e3dac92d172eda *man/meanResiduals.Rd
 e1e2bb65befc06d586cba4965ee47a2f *man/mentalHealth.Rd
@@ -178,7 +178,7 @@ e7c4d55d6cb41eea317e51f30725a01d *man/wheat.Rd
 1d8feb20aa25d549a17d2d8d3850aa92 *tests/RC.R
 d4a449a9c900d32a7cf611d6c871eae8 *tests/RC.Rout.save
 bde3b3b5e848b27071726852fe039503 *tests/RChomog.R
-f108d9f10c0abd4a1e7b4c8aee908cb8 *tests/RChomog.Rout.save
+cb69579875c8de9b86ab006ad281eca7 *tests/RChomog.Rout.save
 45dc1d1e456d831663dd01095cad9857 *tests/biplot.R
 20a9a60e6875141ba6272cc3e8cee3c8 *tests/biplot.Rout.save
 50e1daa0d086b0e3877642f07e9ebbb4 *tests/bwt.R
@@ -188,7 +188,7 @@ abd5beceb0b2e84c503e481ff547de6f *tests/diagonalRef.Rout.save
 bd7a5de26374fbf71cab4562462eae57 *tests/doubleUnidiff.R
 368f099c8f58c72bf13b70cd8e8c7407 *tests/doubleUnidiff.Rout.save
 e4837f02959b07f2a7990308a3a6d54c *tests/gammi.R
-5e628f88c163fc4e216e0da7dfe7a93a *tests/gammi.Rout.save
+dd334b91cd104278751eb66f9a3e772c *tests/gammi.Rout.save
 bd79a07aee68af4417c254182544a98e *tests/logexcess.R
 51c025d367a3a002061f9c2cf1d2df87 *tests/logexcess.Rout.save
 f814163cf4c30fad2d284a018dccd06a *tests/logistic.R
@@ -198,7 +198,7 @@ cf1cac4b510ae223e35a87f1aa6f8dcd *tests/nls.Rout.save
 4e57ad421c0090a314fcbe9342418eda *tests/stereotype.R
 38bd0b71c608ca49ac778f4fc698ff61 *tests/stereotype.Rout.save
 b3366f10b9b5917d3b5a99d617392ef3 *tests/unidiff.R
-b3c9f0e94e395cf8269272604f8fd584 *tests/unidiff.Rout.save
+4993833299461c68e6867867a2268636 *tests/unidiff.Rout.save
 8501b0386c1efafa0a4f934f6388da37 *vignettes/fig-Effect_plots.pdf
 fd726d14883e8a94f45664a8ce062803 *vignettes/fig-LCall.pdf
 596d106d3518e1cb77dbe23745d2f32a *vignettes/fig-LCover45.pdf
@@ -206,4 +206,4 @@ e77867e5284795f1ed6d089899067d9c *vignettes/fig-LCqvplot.pdf
 ed765957742f3d6e102227a3ae699b04 *vignettes/fig-deaths1921-1940.pdf
 39c2eaa3b5904faca6c419c0cab7b70e *vignettes/fig-profilePlot.pdf
 d39bcd84e80e26b411e58a29a7ebf113 *vignettes/gnm.bib
-6fc4a31a74e5de5c877f2cb657f5e781 *vignettes/gnmOverview.Rnw
+f297dbd2cb8285584ce844f73119e099 *vignettes/gnmOverview.Rnw
