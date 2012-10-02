@@ -1,4 +1,4 @@
-baa30c1f2865640eb26ce15cff8b4777 *DESCRIPTION
+7d0f99962106c85579aaf8b9232f7f94 *DESCRIPTION
 8285accfa7f7d4838e714e69afdde143 *NAMESPACE
 b1d819d353bdd1a568f98437e7906cb4 *R/Const.R
 bb50606bc422af76e9c694275de7d2cf *R/Diag.R
@@ -45,7 +45,7 @@ d85548d5610ebf4eac4bac4d8599f79b *R/fitted.gnm.R
 a43213c2e7155330d92d6f717735460f *R/glm.fit.e.R
 e0e949a1cd65be0f3dd1202da6f4343e *R/gnm-defunct.R
 328a913d95b4350291a33af8f5028efb *R/gnm.R
-7aa09ac6759a005d128a03c2847ea941 *R/gnmFit.R
+45d3722e7a6f0a8df35b7069273c3b97 *R/gnmFit.R
 ace606bfe9dbab0699e4d07cfb1a84eb *R/gnmStart.R
 f344b2fc223c2e2e0f1b2fa66b4fd2c2 *R/gnmTerms.R
 ceb866905d17209b7cbcbbe6e66ff6cb *R/gnmTools.R
@@ -123,9 +123,9 @@ fef72c329c2834b0ad1797e8fc6271ac *data/yaish.rda
 c8c477e8cc92a00190fc07f155cc1df8 *demo/00Index
 ff7119032b41d892e8667006bd7cde99 *demo/gnm.R
 b32f42d7df5a203bf363c5d922fe4a00 *inst/CITATION
-dee3a0359c6a1d764c2cb4187194b707 *inst/NEWS
+e61dca548bda243bc455e6beff1b1cb5 *inst/NEWS
 f297dbd2cb8285584ce844f73119e099 *inst/doc/gnmOverview.Rnw
-772b8bbac65a0f3727e551da301d77a5 *inst/doc/gnmOverview.pdf
+ab885dce2550a0586983d5e943b19eb9 *inst/doc/gnmOverview.pdf
 85e992e91d7cba65da2a6d599bd31413 *man/Const.Rd
 e1f037318eed6453bfe84dc897cff5d9 *man/Diag.Rd
 b4f2dc6727b168a83287005e8324e56e *man/Dref.Rd
