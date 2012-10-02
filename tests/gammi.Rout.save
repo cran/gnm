@@ -1,7 +1,6 @@
 
-R Under development (unstable) (2012-09-29 r60838) -- "Unsuffered Consequences"
-Copyright (C) 2012 The R Foundation for Statistical Computing
-ISBN 3-900051-07-0
+R Under development (unstable) (2014-01-01 r64620) -- "Unsuffered Consequences"
+Copyright (C) 2014 The R Foundation for Statistical Computing
 Platform: x86_64-unknown-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
@@ -17,7 +16,6 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 Type 'q()' to quit R.
 
 > library(gnm)
-Loading Tcl/Tk interface ... done
 > set.seed(1)
 > data(wheat)
 > 
@@ -39,4 +37,4 @@ Done
 > 
 > proc.time()
    user  system elapsed 
-  5.084   0.108   5.218 
+  2.615   0.066   2.683 

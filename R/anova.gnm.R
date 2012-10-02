@@ -11,8 +11,9 @@ anova.gnm <- function (object, ..., dispersion = NULL, test = NULL)
     is.gnm <- unlist(lapply(dotargs, function(x) inherits(x, c("gnm", "glm"))))
     dotargs <- dotargs[is.gnm]
     if (length(dotargs) > 0)
-        return(anova.glmlist(c(list(object), dotargs), dispersion = dispersion,
-                             test = test))
+        return(anova(structure(c(list(object), dotargs), class = "glmlist"), 
+                     dispersion = dispersion, test = test))
+# return(anova.glmlist(c(list(object), dotargs), dispersion = dispersion, test = test))
 
     x <- model.matrix(object)
     varlist <- attr(terms(object), "term.labels")
