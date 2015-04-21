@@ -44,11 +44,10 @@ A data frame with two columns:
 If available, the column names of \code{coefMatrix} will be used to name
 the rows.
 }
-\author{ David Firth }
+\author{ David Firth and Heather Turner }
 \seealso{ \code{\link{gnm}}, \code{\link{getContrasts}},
   \code{\link{checkEstimable}}, \code{\link{ofInterest}}} 
 \examples{
-data(yaish)
 set.seed(1)
 
 ## Fit the "UNIDIFF" mobility model across education levels

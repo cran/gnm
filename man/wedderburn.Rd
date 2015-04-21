@@ -28,7 +28,8 @@ wedderburn(link = "logit")
   linear models and the Gauss-Newton method.  \emph{Biometrika}
   \bold{61}, 439--47.
 }
-\author{ David Firth }
+\author{ Modification of \code{\link{binomial}} by the R Core Team. Adapted
+  for the Wedderburn quasi-likelihood family by David Firth. }
 \note{   The reported deviance involves an arbitrary constant (see McCullagh and
   Nelder, 1989, p330); for estimating dispersion, use the Pearson chi-squared
   statistic instead. }
@@ -36,7 +37,7 @@ wedderburn(link = "logit")
 \seealso{ \code{\link{glm}}, \code{\link{gnm}}, \code{\link{family}} }
 \examples{
 set.seed(1)
-data(barley)  ##  data from Wedderburn (1974), see ?barley
+###  Use data from Wedderburn (1974), see ?barley
 
 ###  Fit Wedderburn's logit model with variance proportional to the
 ###  square of mu(1-mu)

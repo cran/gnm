@@ -1,3 +1,22 @@
+#  Modification of add1.glm from the stats package for R.
+#
+#  Copyright (C) 1994-8 W. N. Venables and B. D. Ripley
+#  Copyright (C) 1998-2005 The R Core Team
+#  Copyright (C) 2005, 2010 Heather Turner
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 or 3 of the License
+#  (at your option).
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  A copy of the GNU General Public License is available at
+#  http://www.r-project.org/Licenses/
+
 add1.gnm <- function (object, scope, scale = 0,
                       test = c("none", "Chisq", "F"), x = NULL, k = 2, ...)
 {
@@ -11,7 +30,7 @@ add1.gnm <- function (object, scope, scale = 0,
         Fs[df < .Machine$double.eps] <- NA
         P <- Fs
         nnas <- !is.na(Fs)
-        P[nnas] <- stats:::safe_pf(Fs[nnas], df[nnas], rdf - df[nnas],
+        P[nnas] <- pf(Fs[nnas], df[nnas], rdf - df[nnas],
             lower.tail = FALSE)
         list(Fs = Fs, P = P)
     }
@@ -109,7 +128,7 @@ add1.gnm <- function (object, scope, scale = 0,
         else "scaled dev."
         aod[, LRT] <- dev
         nas <- !is.na(dev)
-        dev[nas] <- stats:::safe_pchisq(dev[nas], aod$Df[nas], lower.tail = FALSE)
+        dev[nas] <- pchisq(dev[nas], aod$Df[nas], lower.tail = FALSE)
         aod[, "Pr(Chi)"] <- dev
     }
     else if (test == "F") {

@@ -55,12 +55,12 @@
   confidence limits for each parameter. These will be labelled as
   (1-level)/2 and 1 - (1-level)/2 in \% (by default 2.5\% and 97.5\%).
 }
-\author{ Heather Turner }
+\author{ Modification of \code{\link[MASS]{confint.glm}} by W. N. Venables and
+  B. D. Ripley. Adapted for \code{"gnm"} objects by Heather Turner. }
 \seealso{ \code{\link{profile.gnm}}, \code{\link{gnm}},
   \code{\link[MASS]{profile.glm}}}
 \examples{
 ### Example in which profiling doesn't take too long
-data(voting)
 count <- with(voting, percentage/100 * total)
 yvar <- cbind(count, voting$total - count)
 classMobility <- gnm(yvar ~ -1 + Dref(origin, destination),
@@ -71,7 +71,6 @@ confint(classMobility, parm = 3:7, trace = TRUE)
 
 \dontrun{
 ### Profiling takes much longer here, but example more interesting!
-data(yaish)
 unidiff <- gnm(Freq ~ educ*orig + educ*dest +
                Mult(Exp(educ), orig:dest), 
                ofInterest = "[.]educ", constrain = "[.]educ1",

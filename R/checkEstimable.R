@@ -1,6 +1,21 @@
+#  Copyright (C) 2005, 2006, 2008, 2010 David Firth and Heather Turner
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 or 3 of the License
+#  (at your option).
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  A copy of the GNU General Public License is available at
+#  http://www.r-project.org/Licenses/
+
 checkEstimable <- function(model,
-                            combMatrix = diag(length(coef(model))),
-                            tolerance = NULL)
+                           combMatrix = diag(length(coef(model))),
+                           tolerance = NULL)
 {
     if (!inherits(model, "gnm")) stop("model not of class gnm")
     coefs <- coef(model)
@@ -18,7 +33,7 @@ checkEstimable <- function(model,
         ## sweeps needed to get the rank right
         subtracted <- rowsum(X, eliminate)/tabulate(eliminate)
         if (attr(terms(model), "intercept") == 1) subtracted[,1] <- 0
-        X <- X - subtracted[eliminate,]
+        X <- X - subtracted[eliminate, , drop = FALSE]
     }
     rankX <- model$rank - nlevels(eliminate)
     check.1 <- function(comb){

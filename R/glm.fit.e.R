@@ -1,30 +1,34 @@
-"glm.fit.e" <-
-##  This fits a glm with eliminated factor, and should be much quicker
-##  than glm.fit when the number of levels of the eliminated factor is large.
-##  It is designed to work with the slightly modified glm function, 'glm.e'.
-##
-##  The 'eliminate' argument, if not NULL, must be a factor.
-##
-##  No account is taken of NAs -- will that be a problem, or have they gone by
-##  the time glm.fit.e gets called?  None of the other extensive checks done by
-##  glm.fit are done here either.
-##
-##  Proof of concept only, no guarantee of fitness for any purpose.
-##
-##  David Firth, September 2009.
-##
-    function (x, y,
-              weights = rep(1, NROW(y)),
-              start = NULL,
-              etastart = NULL,
-              mustart = NULL,
-              offset = rep(0, NROW(y)),
-              family = gaussian(),
-              control = glm.control(), ## only for compatibility with glm.fit
-              intercept = TRUE, ## only for compatibility with glm.fit
-              eliminate = NULL,  ## alternatively a factor
-              ridge = 1e-8,
-              coefonly = FALSE)
+#  This fits a glm with eliminated factor, and should be much quicker
+#  than glm.fit when the number of levels of the eliminated factor is large.
+#
+#  Copyright (C) 2009, 2010, 2012 David Firth and Heather Turner
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 or 3 of the License
+#  (at your option).
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  A copy of the GNU General Public License is available at
+#  http://www.r-project.org/Licenses/
+
+glm.fit.e <- function(
+    x, y,
+    weights = rep(1, NROW(y)),
+    start = NULL,
+    etastart = NULL,
+    mustart = NULL,
+    offset = rep(0, NROW(y)),
+    family = gaussian(),
+    control = glm.control(), ## only for compatibility with glm.fit
+    intercept = TRUE, ## only for compatibility with glm.fit
+    eliminate = NULL,  ## alternatively a factor
+    ridge = 1e-8,
+    coefonly = FALSE)
 {
     if (is.null(eliminate)) { ## just revert to glm.fit
         ## can make a difference in timing!
@@ -36,7 +40,7 @@
         if (coefonly) return(tmp$coef)
         else return(tmp)
     }
-##  The rest handles the case of an eliminated factor
+    ##  The rest handles the case of an eliminated factor
     names(y) <- rownames(x) <- NULL
     nobs <- NROW(y)
     non.elim <- ncol(x)
@@ -56,7 +60,7 @@
         y <- as.numeric(y[ord])
         weights <- weights[ord]
         offset <- offset[ord]
-        if (non.elim) x <- x[ord,]
+        if (non.elim) x <- x[ord, , drop = FALSE]
         eliminate <- eliminate[ord]
     }
     size <- tabulate(eliminate)
@@ -83,7 +87,7 @@
     if (non.elim) {
         ## sweeps needed to get the rank right
         subtracted <- rowsum.default(x, eliminate, reorder = FALSE)/size
-        x <- x - subtracted[eliminate,]
+        x <- x - subtracted[eliminate, , drop = FALSE]
         ## initial fit to drop aliased columns
         model <- lm.wfit(x, z, w, offset = os.vec)
         full.theta <- model$coefficients

@@ -91,12 +91,12 @@
   \code{constrain} argument to \code{gnm} or by a convention to handle
   linear aliasing).
 }
-\author{ Heather Turner }
+\author{ Modification of \code{\link{summary.glm}} by the R Core Team. Adapted
+  for \code{"gnm"} objects by Heather Turner. }
 \seealso{ \code{\link{gnm}}, \code{\link{summary}}}
 \examples{
 ### First example from ?Dref
 set.seed(1)
-data(voting)
 
 ## reconstruct counts voting Labour/non-Labour
 count <- with(voting, percentage/100 * total)

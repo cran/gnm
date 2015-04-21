@@ -76,7 +76,7 @@ getContrasts(model, set = NULL,  ref = "first", scaleRef = "mean",
   An object of class
   \code{qv} --- see \code{\link[qvcalc]{qvcalc}}.
 }
-\author{ David Firth }
+\author{ David Firth and Heather Turner }
 \seealso{ \code{\link{gnm}}, \code{\link{se}},
   \code{\link{checkEstimable}}, \code{\link[qvcalc]{qvcalc}},
   \code{\link{ofInterest}}}
@@ -91,7 +91,6 @@ getContrasts(model, set = NULL,  ref = "first", scaleRef = "mean",
   \examples{
 ### Unscaled contrasts ###
 set.seed(1)
-data(yaish)
 
 ## Fit the "UNIDIFF" mobility model across education levels -- see ?yaish
 unidiff <- gnm(Freq ~ educ*orig + educ*dest +
@@ -108,7 +107,6 @@ plot(unidiffContrasts,
 
 ### Scaled contrasts (elliptical contrasts) ###
 set.seed(1)
-data(mentalHealth)
 
 ##  Goodman Row-Column association model fits well (deviance 3.57, df 8)
 mentalHealth$MHS <- C(mentalHealth$MHS, treatment)

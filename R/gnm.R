@@ -1,3 +1,22 @@
+#  Designed to take similar arguments to glm from the stats package from R;
+#  some of the code to handle the arguments is copied/modified from glm.
+#
+#  Copyright (C) 1995-2005 The R Core Team
+#  Copyright (C) 2005-2010, 2012, 2013 Heather Turner and David Firth
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 or 3 of the License
+#  (at your option).
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  A copy of the GNU General Public License is available at
+#  http://www.r-project.org/Licenses/
+
 gnm <- function(formula, eliminate = NULL, ofInterest = NULL,
                 constrain = numeric(0), #index of non-eliminated parameters
                 constrainTo = numeric(length(constrain)), family = gaussian,
@@ -30,7 +49,7 @@ gnm <- function(formula, eliminate = NULL, ofInterest = NULL,
         xtf <- xtfrm(modelData$`(eliminate)`)
         ord <- order(xtf)
         if (ordTRUE <- !identical(ord, xtf)) {
-            modelData <- modelData[ord,]
+            modelData <- modelData[ord, , drop = FALSE]
             eliminate <- modelData$`(eliminate)`
         }
         nElim <- nlevels(eliminate)
@@ -129,14 +148,14 @@ gnm <- function(formula, eliminate = NULL, ofInterest = NULL,
 
         if (identical(constrain, "[?]"))
             call$constrain <- constrain <-
-                unlist(relimp::pickFrom(coefNames,
-                                        edit.setlabels = FALSE,
-                                        title =
-                                        "Constrain one or more gnm coefficients",
-                                        items.label = "Model coefficients:",
-                                        warningText =
-                                        "No parameters were specified to constrain",
-                                        return.indices = TRUE))
+                unlist(pickFrom(coefNames,
+                                edit.setlabels = FALSE,
+                                title =
+                                "Constrain one or more gnm coefficients",
+                                items.label = "Model coefficients:",
+                                warningText =
+                                "No parameters were specified to constrain",
+                                return.indices = TRUE))
         if (is.character(constrain)) {
             res <- match(constrain, coefNames, 0)
             if (res == 0 && length(constrain) == 1){
@@ -289,11 +308,11 @@ gnm <- function(formula, eliminate = NULL, ofInterest = NULL,
             eliminate <- eliminate[reorder]
             offset <- offset[reorder]
         })
-        modelData <- modelData[reorder,]
+        modelData <- modelData[reorder, , drop = FALSE]
         y <- y[reorder]
         if (x) {
             asgn <- attr(fit$x, "assign")
-            fit$x <- fit$x[reorder,]
+            fit$x <- fit$x[reorder, , drop = FALSE]
             attr(fit$x, "assign") <- asgn
         }
     }
@@ -305,7 +324,7 @@ gnm <- function(formula, eliminate = NULL, ofInterest = NULL,
         attr <- attributes(data)
         if (!missing(subset)) {
             ind <- as.numeric(names(y))
-            lev <- do.call("expand.grid", attr$dimnames)[ind,]
+            lev <- do.call("expand.grid", attr$dimnames)[ind,, drop = FALSE]
             attr$dimnames <- apply(lev, 2, unique)
             attr$dim <- unname(sapply(attr$dimnames, length))
         }

@@ -1,3 +1,18 @@
+#  Copyright (C) 2010, 2012, 2013 Heather Turner
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 or 3 of the License
+#  (at your option).
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  A copy of the GNU General Public License is available at
+#  http://www.r-project.org/Licenses/
+
 meanResiduals <- function(object, by = NULL, standardized = TRUE,
                           as.table = TRUE, ...){
     if (is.null(by))
@@ -6,7 +21,7 @@ meanResiduals <- function(object, by = NULL, standardized = TRUE,
         ## check single factor only
         if (ncol(attr(terms(by), "factors")) != 1)
             stop("`by' should only specify a single term")
-        ## find factors as in mosaic.glm
+        ## find factors as in mosaic.glm (own code)
         by <- do.call("model.frame",
                       list(formula = by, data = object$data,
                            subset = object$call$subset,
@@ -37,10 +52,12 @@ meanResiduals <- function(object, by = NULL, standardized = TRUE,
     if (standardized) res <- res * sqrt(agg.wts)
     ## now compute degrees of freedom
     Xreduced <- rowsum(model.matrix(object), fac, na.rm = TRUE)
+    ## suppressWarnings in rankMatrix re coercion to dense matrix
     if (as.table){
         res <- structure(as.table(res), call = object$call,
                          by = paste(names(by), collapse = ":"),
-                         df = nlevels(fac) - rankMatrix(Xreduced),
+                         df = nlevels(fac) -
+                         suppressWarnings(rankMatrix(Xreduced)),
                          standardized = standardized,
                          weights = as.table(agg.wts))
         class(res) <- c("meanResiduals", "table")
@@ -48,7 +65,8 @@ meanResiduals <- function(object, by = NULL, standardized = TRUE,
     else {
         res <- structure(c(res), call = object$call,
                          by = paste(names(by), collapse = ":"),
-                         df = nlevels(fac) - rankMatrix(Xreduced),
+                         df = nlevels(fac) -
+                         suppressWarnings(rankMatrix(Xreduced)),
                          standardized = standardized,
                          weights = c(agg.wts))
         class(res) <- c("meanResiduals", "numeric")

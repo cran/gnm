@@ -28,7 +28,7 @@ Exp(expression, inst = NULL)
     of the term, given a label for the predictor.}
   \item{ call }{the call to use as a prefix for parameter labels. } 
 }
-\author{ Heather Turner }
+\author{ Heather Turner and David Firth }
 \seealso{ \code{\link{gnm}}, \code{\link{formula}},
   \code{\link{nonlin.function}}}
 \examples{
@@ -36,7 +36,7 @@ set.seed(1)
 
 ## Using 'Mult' with 'Exp' to constrain the first constituent multiplier
 ##  to be non-negative
-data(yaish)
+
 ## Fit the "UNIDIFF" mobility model across education levels
 unidiff <- gnm(Freq ~ educ*orig + educ*dest +
                Mult(Exp(educ), orig:dest),

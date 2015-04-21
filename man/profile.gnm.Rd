@@ -89,7 +89,9 @@
 }
 \references{
   Chambers, J. M. and Hastie, T. J. (1992) \emph{Statistical Models in S} }
-\author{ Heather Turner }
+\author{ Modification of \code{\link[MASS]{profile.glm}} from the MASS
+  package. Originally D. M. Bates and W. N. Venables, ported to R by
+  B. D. Ripley, adapted for \code{"gnm"} objects by Heather Turner. }
 \seealso{ \code{\link{confint.gnm}},  \code{\link{gnm}},
   \code{\link[MASS]{profile.glm}}, \code{\link{ofInterest}}
 }
@@ -97,7 +99,6 @@
 set.seed(1)
 
 ### Example in which deviance is near quadratic
-data(voting)
 count <- with(voting, percentage/100 * total)
 yvar <- cbind(count, voting$total - count)
 classMobility <- gnm(yvar ~ -1 + Dref(origin, destination),
@@ -113,7 +114,6 @@ cbind(coefData[1] - 1.96 * coefData[2], coefData[1] + 1.96 * coefData[2])
 \dontrun{
 ### These examples take longer to run
 ### Another near quadratic example
-data(occupationalStatus)
 RChomog <- gnm(Freq ~ origin + destination + Diag(origin, destination) +
                MultHomog(origin, destination),
                ofInterest = "MultHomog", constrain = "MultHomog.*1",
@@ -126,7 +126,6 @@ coefData <- se(RChomog)
 cbind(coefData[1] - 1.96 * coefData[2], coefData[1] + 1.96 * coefData[2])
 
 ## Another near quadratic example, with more complex constraints
-data(voting)
 count <- with(voting, percentage/100 * total)
 yvar <- cbind(count, voting$total - count)
 classMobility <- gnm(yvar ~ -1 + Dref(origin, destination), 
@@ -143,7 +142,6 @@ coefData <- se(classMobility)
 cbind(coefData[1] - 1.96 * coefData[2], coefData[1] + 1.96 * coefData[2])
 
 ### An example showing asymptotic deviance
-data(yaish)
 unidiff <- gnm(Freq ~ educ*orig + educ*dest +
                Mult(Exp(educ), orig:dest),
                ofInterest = "[.]educ", constrain = "[.]educ1",
@@ -162,7 +160,6 @@ coefData <- se(unidiff)
 cbind(coefData[1] - 1.96 * coefData[2], coefData[1] + 1.96 * coefData[2])
 
 ### A far from quadratic example, also with eliminated parameters
-data(backPain)
 backPainLong <- expandCategorical(backPain, "pain")
 
 oneDimensional <- gnm(count ~ pain + Mult(pain, x1 + x2 + x3),

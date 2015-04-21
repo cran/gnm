@@ -265,7 +265,7 @@ gnm(formula, eliminate = NULL, ofInterest = NULL, constrain = numeric(0),
   religion and vote in Britain and France.  \emph{La Lettre de la Maison
     Francaise} \bold{8}.
 }
-\author{ Heather Turner, David Firth }
+\author{ Heather Turner and David Firth }
 \note{
   Regular expression matching is performed using \code{grep} with
   default settings.
@@ -294,7 +294,6 @@ gnm(formula, eliminate = NULL, ofInterest = NULL, constrain = numeric(0),
 \examples{
 ###  Analysis of a 4-way contingency table
 set.seed(1)
-data(cautres)
 print(cautres)
 
 ##  Fit a "double UNIDIFF" model with the religion-vote and class-vote

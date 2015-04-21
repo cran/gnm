@@ -1,6 +1,6 @@
 
-R Under development (unstable) (2014-01-01 r64620) -- "Unsuffered Consequences"
-Copyright (C) 2014 The R Foundation for Statistical Computing
+R Under development (unstable) (2013-09-11 r63910) -- "Unsuffered Consequences"
+Copyright (C) 2013 The R Foundation for Statistical Computing
 Platform: x86_64-unknown-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
@@ -16,7 +16,6 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 Type 'q()' to quit R.
 
 > library(MASS)
-> data(birthwt)
 > example(birthwt)
 
 brthwt> bwt <- with(birthwt, {
@@ -184,4 +183,4 @@ ftv     0   231.91 991.91
 > 
 > proc.time()
    user  system elapsed 
-  2.457   0.051   2.510 
+  3.004   0.036   3.056 

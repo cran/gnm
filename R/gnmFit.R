@@ -1,3 +1,18 @@
+#  Copyright (C) 2005-2013 Heather Turner and David Firth
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 or 3 of the License
+#  (at your option).
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  A copy of the GNU General Public License is available at
+#  http://www.r-project.org/Licenses/
+
 gnmFit <-
     function (modelTools, y,
               constrain = numeric(0), # index of non-elimindated parameters
@@ -362,14 +377,16 @@ gnmFit <-
     theta[constrain] <- NA
     X <- modelTools$localDesignFunction(theta, varPredictors)
     X <- X[, notConstrained, drop = FALSE]
+    ## suppress warnings in rankMatrix re coercion to dense matrix
     if (nelim) {
     ## sweeps needed to get the rank right
         subtracted <- rowsum.default(X, eliminate, reorder = FALSE)/grp.size
         if (modelTools$termAssign[1] == 0) subtracted[,1] <- 0
-        theRank <- rankMatrix(X - subtracted[eliminate,]) + nelim
+        theRank <- suppressWarnings(
+            rankMatrix(X - subtracted[eliminate, , drop = FALSE])) + nelim
         names(alpha) <- paste("(eliminate)", elim, sep = "")
     }
-    else theRank <- rankMatrix(X)
+    else theRank <- suppressWarnings(rankMatrix(X))
     modelAIC <- suppressWarnings(family$aic(y, rep.int(1, nobs),
                                             mu, weights, dev[1])
                                  + 2 * theRank)
