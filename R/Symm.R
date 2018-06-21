@@ -13,20 +13,27 @@
 #  A copy of the GNU General Public License is available at
 #  http://www.r-project.org/Licenses/
 
-Symm <- function(...){
+Symm <- function(..., separator = ":"){
+    if (!(is.character(separator) && nchar(separator) > 0)) stop(
+		 "separator must be a non-empty character string") 
     dots <- list(...)
-    if (any(diff(sapply(dots, length)) != 0)) stop(
-                "arguments to symm() must all have same length")
+    if (any(diff(vapply(dots, length, 1)) != 0)) stop(
+                "arguments to Symm() must all have same length")
     dots <- lapply(dots, as.factor)
-    facMatrix <- sapply(dots, as.character)
+    Levels <- levels(dots[[1]])
+    check <- vapply(dots[-1], function(x) identical(levels(x), Levels), 
+                    TRUE)
+    if (!all(check)) stop("factors must have the same levels")
+    facMatrix <- vapply(dots, unclass, numeric(length(dots[[1]])))
     f <- function(row){
-        string <- paste(sort(row), collapse = "")
+        string <- paste(Levels[sort(row)], collapse = separator)
         if (any(is.na(row))) is.na(string) <- TRUE
         string
     }
-    if (inherits(facMatrix, "matrix"))
-        result <- factor(apply(facMatrix, 1, f))
-    else
-        result <- factor(f(facMatrix))
-    result
+    n <- length(Levels)
+    seqn <- seq_len(n)
+    factor(apply(facMatrix, 1, f),
+           paste(Levels[rep(seqn, rev(seqn))],
+                 Levels[unlist(lapply(seqn, function(x) seq(x, n)))],
+                 sep = separator))
 }

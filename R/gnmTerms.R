@@ -15,11 +15,13 @@
 
 gnmTerms <- function(formula, eliminate = NULL, data = NULL)
 {
+    env <- environment(formula)
     if (!is.null(eliminate)){
         formula <- as.formula(substitute(a ~ b - e - 1,
                                          list(a = formula[[2]],
                                               b = formula[[3]],
                                               e = eliminate)))
+        environment(formula) <- env
     }
     fullTerms <- terms(formula, specials = "instances", simplify = TRUE,
                        keep.order = TRUE, data = data)
@@ -32,22 +34,24 @@ gnmTerms <- function(formula, eliminate = NULL, data = NULL)
         termLabels <- c("0"[!attr(fullTerms, "intercept")],
                         attr(fullTerms, "term.labels"))
         instLabels <- as.list(attr(fullTerms, "variables"))[inst + 1]
-        termLabels[termLabels %in% instLabels] <- sapply(instLabels, eval)
+        termLabels[termLabels %in% instLabels] <- 
+            vapply(instLabels, eval, character(1))
         variables <- as.character(attr(fullTerms, "variables"))[-1]
         offsetLabels <- variables[attr(fullTerms, "offset")]
         response <- variables[attr(fullTerms, "response")][1][[1]]
-        fullTerms <- terms(reformulate(c(termLabels, offsetLabels), response),
+        new <- reformulate(c(termLabels, offsetLabels), ".")
+        fullTerms <- terms(update.formula(formula, new),
                            keep.order = TRUE, data = data)
-        environment(fullTerms) <- environment(formula)
+        environment(fullTerms) <- env
     }
 
     termLabels <- c("1"[attr(fullTerms, "intercept")],
                     attr(fullTerms, "term.labels"))
     variables <- predvars <- as.list(attr(fullTerms, "variables"))[-1]
 
-    specials <- which(sapply(variables, function(x) {
+    specials <- which(vapply(variables, function(x) {
         length(x) > 1 && inherits(match.fun(x[[1]]), "nonlin")
-    }))
+    }, TRUE))
     if (!length(specials)) {
         n <- length(termLabels)
         attributes(fullTerms) <-
@@ -68,8 +72,8 @@ gnmTerms <- function(formula, eliminate = NULL, data = NULL)
 
     specialTerms <- rownames(attr(fullTerms, "factors"))[specials]
     specialTerms <- strsplit(specialTerms, ", inst = |,? ?\\)$", perl = TRUE)
-    term <- sapply(specialTerms, "[", 1)
-    inst <- as.numeric(sapply(specialTerms, "[", 2))
+    term <- vapply(specialTerms, "[", character(1), 1)
+    inst <- as.numeric(vapply(specialTerms, "[", character(1), 2))
 
     patch <- term %in% term[inst > 1] & is.na(inst)
     termLabels[termLabels %in% specials[patch]] <-
@@ -171,13 +175,12 @@ gnmTerms <- function(formula, eliminate = NULL, data = NULL)
                common = unlist(common),
                block = unlist(blockList),
                match = unlist(match),
-               assign = rep(seq(class), sapply(class, length)),
+               assign = rep(seq(class), vapply(class, length, 1)),
                type = unlist(class),
                prefixLabels = unlist(prefixLabels),
                varLabels = unlist(varLabels),
                start = start,
                predictor = predictor,
                class = c("gnmTerms", "terms", "formula")))
-    environment(fullTerms) <- environment(formula)
     fullTerms
 }

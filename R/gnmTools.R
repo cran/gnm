@@ -1,4 +1,4 @@
-#  Copyright (C) 2005-2012 Heather Turner and David Firth
+#  Copyright (C) 2005-2017 Heather Turner and David Firth
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -34,8 +34,8 @@
         b <- block == i
         if (all(common[b])) {
             ## get full set of levels
-            facs <- sapply(unitLabels[b], function(x) {
-                is.factor(eval(parse(text = x), gnmData))})
+            facs <- vapply(unitLabels[b], function(x) {
+                is.factor(eval(parse(text = x), gnmData))}, TRUE)
             if (!all(facs))
                 stop(paste(c("The following should be factors:",
                              unitLabels[b][!facs]), collapse = "\n"))
@@ -80,7 +80,7 @@
             nm <- paste(prefixLabels[tmpAssign], colnames(tmp)[!prefixOnly],
                         sep = "")
             names(tmpAssign) <- nm
-            termTools[b] <- lapply(split(1:ncol(tmp), tmpAssign),
+            termTools[b] <- lapply(split(seq_len(ncol(tmp)), tmpAssign),
                                    function(i, M) M[, i , drop = FALSE], tmp)
             factorAssign[b] <- split(tmpAssign, tmpAssign)
             adj <- adj + length(tmpAssign)
@@ -160,10 +160,9 @@
 
     varPredictors <- function(theta) {
         for (i in seqFactor) {
-            prodList[[i]] <- .Call("submatprod", baseMatrix,
+            prodList[[i]] <- .Call(C_submatprod, baseMatrix,
                                    theta[thetaID[[i]]],
-                                   first[a[i]], nr, nc[i],
-                                   PACKAGE = "gnm", NAOK = TRUE)
+                                   first[a[i]], nr, nc[i])
         }
         prodList
     }
@@ -172,7 +171,8 @@
         if (term) {
             es <- lapply(attr(modelTerms, "predictor"), function(x) {
                 do.call("bquote", list(x, gnmData))})
-            tp <- matrix(sapply(es, eval, c(varPredictors, gnmData)), nr)
+            tp <- vapply(es, eval, double(nr),
+                         c(varPredictors, gnmData))
             colnames(tp) <- c("(Intercept)"[attr(modelTerms, "intercept")],
                               attr(modelTerms, "term.labels"))
             tp
@@ -219,8 +219,8 @@
                 if (type[fi]) {
                     v <- attr(eval(varDerivs[[fi]], c(varPredictors, gnmData)),
                               "gradient")
-                    .Call("subprod", X, baseMatrix, as.double(v),
-                          first[i1], last[i2], nr, PACKAGE = "gnm")
+                    .Call(C_subprod, X, baseMatrix, as.double(v),
+                          first[i1], last[i2], nr)
                 }
             }
             if(!is.null(ind)) X[, a, drop = FALSE]
@@ -230,27 +230,28 @@
             if (is.null(ind)){
                 v <- attr(eval(specialVarDerivs, c(varPredictors, gnmData)),
                           "gradient")
-                .Call("newsubprod", baseMatrix, as.double(v), X,
+                .Call(C_newsubprod, baseMatrix, as.double(v), X,
                       first[a[tmpID]], first[vID], firstX[a[tmpID]],
                       as.integer(length(nCommon)), lt[tmpID], lastX[z[tmpID]],
-                      nr, nCommon, max(nCommon), PACKAGE = "gnm")
+                      nr, nCommon, max(nCommon))
             }
             else {
                 i1 <- convID[ind]
                 fi <- unique(factorAssign[commonAssign == commonAssign[i1]])
                 v <- list()
                 for(j in fi)
-                    v[[j]] <- attr(eval(varDerivs[[j]], c(varPredictors, gnmData)),
+                    v[[j]] <- attr(eval(varDerivs[[j]], 
+                                        c(varPredictors, gnmData)),
                                    "gradient")
-                .Call("onecol", baseMatrix, as.double(unlist(v[fi])),
-                      first[i1], lt[fi[1]], nr, as.integer(length(fi)),
-                      PACKAGE = "gnm")
+                .Call(C_onecol, baseMatrix, as.double(unlist(v[fi])),
+                      first[i1], lt[fi[1]], nr, as.integer(length(fi)))
             }
         }
     }
 
-    toolList <- list(start = theta, constrain = constrain, varPredictors = varPredictors,
-                     predictor = predictor, localDesignFunction = localDesignFunction)
-    if (x) toolList$termAssign <- termAssign[uniq]
+    toolList <- list(start = theta, constrain = constrain, 
+                     varPredictors = varPredictors, predictor = predictor,
+                     localDesignFunction = localDesignFunction)
+    toolList$termAssign <- termAssign[uniq]
     toolList
 }
