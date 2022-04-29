@@ -13,3 +13,9 @@ rc1 <- gnm(Freq ~ r + c + Diag(r,c) + MultHomog(r, c),
 anova(rc1)
 
 because constraining one element of 4th term, treats as if all constrained!! (Although shouldn't have to refit full model anyway!)
+
+BUG print.gnm (also print.summary.gnm), e.g. too much space in
+
+Call:
+gnm(formula = Freq ~ election * vote + election * class * religion + 
+    Mult(Exp(election), religion:vote) + Mult(Exp(election),     class:vote), family = poisson, data = cautres, verbose = FALSE)
