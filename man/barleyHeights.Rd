@@ -15,11 +15,11 @@
   }
 }
 \source{
-  Aastveit, A. H. \& Martens, H. (1986). ANOVA interactions interpreted
+  Aastveit, A. H. and Martens, H. (1986). ANOVA interactions interpreted
   by partial least squares regression. \emph{Biometrics}, \bold{42}, 829--844.
 }
 \references{
-  Chadoeuf, J \& Denis, J B (1991). Asymptotic variances for the
+  Chadoeuf, J and Denis, J B (1991). Asymptotic variances for the
   multiplicative interaction model. \emph{J. App. Stat.} \bold{18(3)}, 331--353.
 }
 \examples{
@@ -34,7 +34,7 @@ gamma <- getContrasts(barleyModel, pickCoef(barleyModel, "[.]y"),
 delta <- getContrasts(barleyModel, pickCoef(barleyModel, "[.]g"),
                       ref = "mean", scaleWeights = "unit")
 
-## Corresponding CI's similar to Chadoeuf & Denis (1991) Table 8
+## Corresponding CI's similar to Chadoeuf and Denis (1991) Table 8
 ## (allowing for change in sign)
 gamma[[2]][,1] + (gamma[[2]][,2]) \%o\% c(-1.96, 1.96)
 delta[[2]][,1] + (delta[[2]][,2]) \%o\% c(-1.96, 1.96)

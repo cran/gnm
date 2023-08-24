@@ -1,4 +1,4 @@
-#  Copyright (C) 2005-2013 Heather Turner and David Firth
+#  Copyright (C) 2005-2023 Heather Turner and David Firth
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 
 gnmFit <-
     function (modelTools, y,
-              constrain = numeric(0), # index of non-elimindated parameters
+              constrain = numeric(0), # index of non-eliminated parameters
               constrainTo = numeric(length(constrain)),
               eliminate = NULL, # now a factor
               family = poisson(),
@@ -44,33 +44,30 @@ gnmFit <-
     nelim <- nlevels(eliminate)
     non.elim <- seq.int(nelim + 1, length(start))
 
-    ## add constraints specified by modelTools and glm
-    tmpTheta <- as.double(rep.int(NA, nTheta))
+    ## add constraints for inestimable linear parameters
+    tmpTheta <- rep.int(NA_real_, nTheta)
+    tmpTheta[constrain] <- constrainTo
     varPredictors <- modelTools$varPredictors(tmpTheta)
     X <- modelTools$localDesignFunction(tmpTheta, varPredictors)
     isLinear <- unname(!is.na(colSums(X)))
-    tmpTheta[constrain] <- constrainTo
-    unspecified <- unname(is.na(tmpTheta))
-    if (any(isLinear & unspecified)) {
-        tmpTheta[isLinear & unspecified] <-
-            suppressWarnings(glm.fit.e(X[, isLinear & unspecified, 
-                                         drop = FALSE],
-                                       y,
-                                       family = family,
-                                       intercept = FALSE,
-                                       eliminate = if (nelim) eliminate
-                                       else NULL,
-                                       coefonly = TRUE,
-                                       control = glm.control(maxit = 1)))
-
-        extraLin <- which(isLinear & is.na(tmpTheta))
+    unspecifiedLin <- isLinear & unname(is.na(tmpTheta))
+    Xlinear <- X[, unspecifiedLin, drop = FALSE]
+    if (nelim){
+        ## sweeps needed to get the rank right
+        size <- tabulate(eliminate)
+        subtracted <- rowsum.default(Xlinear, eliminate, reorder = FALSE)/size
+        Xlinear <- Xlinear - subtracted[eliminate, , drop = FALSE]
+    }
+    QR <- qr(Xlinear)
+    if (QR$rank < sum(unspecifiedLin)) {
+        extraLin <- which(unspecifiedLin)[QR$pivot[-seq_len(QR$rank)]]
     } else extraLin <- numeric()
-
-    extra <- setdiff(c(modelTools$constrain, extraLin), constrain)
+    extra <- setdiff(extraLin, constrain)
     ind <- order(c(constrain, extra))
     constrain <- c(constrain, extra)[ind]
     constrainTo <- c(constrainTo, numeric(length(extra)))[ind]
     notConstrained <- !seq.int(nTheta) %in% constrain
+    
     status <- "not.converged"
     unspecifiedNonlin <- FALSE
     dev <- numeric(2)
@@ -120,7 +117,8 @@ gnmFit <-
                           family = family,
                           intercept = FALSE,
                           eliminate = if (nelim) eliminate else NULL,
-                          coefonly = TRUE)})
+                          coefonly = TRUE,
+                          ridge = ridge - 1)})
             ## if no starting values for elim, use result of above
             if (initElim) alpha <- unname(attr(tmpTheta, "eliminated"))
             theta[unspecifiedLin] <- naToZero(tmpTheta)

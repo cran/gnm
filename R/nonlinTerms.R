@@ -16,7 +16,8 @@
 nonlinTerms <- function(predictors, variables = NULL, term = NULL,
                      common = seq(predictors), call = NULL,
                      match = numeric(length(predictors)),
-                     start = NULL, nonlin.function = NULL, data = NULL) {
+                     start = NULL, nonlin.function = NULL, data = NULL,
+                     envir = NULL) {
 
     shadow <- predictor <- predvars <- vars <- unitLabels <- hashLabels <-
         offsetLabels <- varLabels <- blockList <- matchID <-
@@ -67,8 +68,7 @@ nonlinTerms <- function(predictors, variables = NULL, term = NULL,
                                          attr(nonlinTerms, "term.labels")))
             vars[[i]] <- predvars[[i]] <-
                 as.list(attr(nonlinTerms, "variables"))[-1]
-            specials <- vapply(vars[[i]], function(x) {
-                length(x) > 1 && inherits(match.fun(x[[1]]), "nonlin")}, TRUE)
+            specials <- vapply(vars[[i]], isSpecial, envir = envir, TRUE)
             const <- attr(nonlinTerms, "specials")$Const
             if (length(const)) {
                 unitLabels[[i]] <- unitLabels[[i]][!unitLabels[[i]] %in%
@@ -101,7 +101,9 @@ nonlinTerms <- function(predictors, variables = NULL, term = NULL,
             for (j in seq(n)) {
                 if (nonlinear[j]) {
                     tmp <- do.call("Recall",
-                                   eval(parse(text = unitLabels[[i]][[j]])))
+                                   c(eval(parse(text = unitLabels[[i]][[j]]),
+                                        envir = envir),
+                                     envir = envir))
                     if (match[i]) {
                         if (any(tmp$matchID > 0)) {
                             shadow[[i]][[j]] <- tmp$prefix
@@ -194,7 +196,7 @@ nonlinTerms <- function(predictors, variables = NULL, term = NULL,
         sep <- character(length(call))
         sep[names(call) != ""] <- " = "
         call <- paste(names(call), sep, call, sep = "")
-        prefix <- paste(fn, "(", paste(call, collapse = ", "), ")",
+        prefix <- paste(deparse(fn), "(", paste(call, collapse = ", "), ")",
                         sep = "")
 
     }
