@@ -1,6 +1,6 @@
-9583c02abca0e12deee821e6e8bf2871 *DESCRIPTION
+c5133d4057c775a2f1800d0742132a33 *DESCRIPTION
 77894165a290799e7e3381c75e05712b *NAMESPACE
-4ac9b2cd1303bfc3ff0d87e0b96d9267 *NEWS.md
+36a0b22784abdde14a5d6d145f90dc09 *NEWS.md
 854496a25c0c74492a5047b936d55ab5 *R/Const.R
 0143c717a0afb6bf5fd52f59948419a8 *R/Diag.R
 5fee39db2b681eff9a6b1b0cd336eb94 *R/Dref.R
@@ -121,7 +121,7 @@ c9d7e30a137b9f9fb6311ecf82d81842 *demo/gnm.R
 1c469e764020d31aa9088782d47b4bfb *inst/WORDLIST
 7ca3b3eb71c300a9339a3535f3524bb9 *inst/doc/gnmOverview.R
 fb8a72ebe4b3ab53e355f23b3c8c8d1c *inst/doc/gnmOverview.Rnw
-0f3fc14810e068246ec6e5be85f2de0c *inst/doc/gnmOverview.pdf
+6eda4c0c04400ec98e1592e370a65e36 *inst/doc/gnmOverview.pdf
 85e992e91d7cba65da2a6d599bd31413 *man/Const.Rd
 53c39d9d86881cbfe64616586902a165 *man/Diag.Rd
 0358eb8f515685aa7cc613e41ed1b887 *man/Dref.Rd
@@ -171,7 +171,7 @@ e2b7330e553d7fa198f4ee866547e047 *man/voting.Rd
 45f6173b89f29140a32b451db068a05f *man/wheat.Rd
 382958f7c88a849929c32db5d54cfc92 *man/yaish.Rd
 2fa4c7011c2bc0f7449ae151d5cc44ae *src/Makevars
-4a3b353a823c85526e5f59c7a0b83bc6 *src/gnm.c
+118276ffad3a253189e54cf6ad542ce3 *src/gnm.c
 62be8459d7a170fed70d4c266e90f28b *tests/testthat.R
 8ade8729d3356fade8c6717a9bba9f6d *tests/testthat/_snaps/biplot.md
 83763234044829d1f7f3ad8d353d031e *tests/testthat/_snaps/confint.gnm.md

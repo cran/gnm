@@ -1,6 +1,6 @@
 Package: gnm
 Title: Generalized Nonlinear Models
-Version: 1.1-4
+Version: 1.1-5
 Authors@R: c(
     person("Heather", "Turner", , "ht@heatherturner.net", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-1256-3375")),
@@ -31,7 +31,7 @@ Language: en-GB
 LazyData: yes
 Config/testthat/edition: 3
 NeedsCompilation: yes
-Packaged: 2023-08-26 16:17:09 UTC; stspao
+Packaged: 2023-09-16 11:07:03 UTC; stspao
 Author: Heather Turner [aut, cre] (<https://orcid.org/0000-0002-1256-3375>),
   David Firth [aut] (<https://orcid.org/0000-0003-0302-2312>),
   Brian Ripley [ctb],
@@ -40,4 +40,4 @@ Author: Heather Turner [aut, cre] (<https://orcid.org/0000-0002-1256-3375>),
   Martin Maechler [ctb] (<https://orcid.org/0000-0002-8685-9910>)
 Maintainer: Heather Turner <ht@heatherturner.net>
 Repository: CRAN
-Date/Publication: 2023-08-27 07:00:02 UTC
+Date/Publication: 2023-09-16 11:40:02 UTC
